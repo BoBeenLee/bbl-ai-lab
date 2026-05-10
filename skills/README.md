@@ -13,4 +13,4 @@ Gemini CLI(GitHub Action 안)에서 컨텍스트 파일로 attach 한다.
 ## 추가/교체 방법
 
 1. 새 스킬의 `SKILL.md`를 이 디렉토리에 `<name>.SKILL.md`로 복사한다.
-2. `scripts/elaborate.sh`의 `SKILL_FILE` 변수를 가리키게 바꾸거나, 다중 스킬 라우팅 단계로 확장한다.
+2. 해당 flow 스크립트(예: `scripts/idea-elaborate.sh`)의 `SKILL_FILE` 변수를 가리키게 바꾸거나, 다중 스킬 라우팅 단계로 확장한다.

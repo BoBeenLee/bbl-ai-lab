@@ -1,8 +1,8 @@
 {
-  "name": "tg-idea-bridge",
-  "version": "0.1.0",
+  "name": "tg-automation-bridge",
+  "version": "0.2.0",
   "private": true,
-  "description": "Cloudflare Worker bridging Telegram webhook to GitHub repository_dispatch.",
+  "description": "Cloudflare Worker bridging Telegram webhook to GitHub repository_dispatch (multi-flow router).",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",

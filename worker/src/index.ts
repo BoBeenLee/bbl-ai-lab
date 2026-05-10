@@ -1,11 +1,17 @@
-// Cloudflare Worker: Telegram webhook -> GitHub repository_dispatch
+// Cloudflare Worker: Telegram webhook -> GitHub repository_dispatch (multi-flow router)
 //
-// 동작:
-//   1) POST /tg-webhook (Telegram이 호출)
-//   2) X-Telegram-Bot-Api-Secret-Token 헤더로 진위 검증
-//   3) message.from.id 가 ALLOWED_CHAT_IDS 에 포함되는지 확인
-//   4) repository_dispatch 호출 (event_type=idea-submitted)
-//   5) 사용자에게 즉시 "처리 중" 회신 전송
+// 새 자동화 flow 추가하려면:
+//   1) 아래 FLOWS 테이블에 한 줄 추가
+//   2) 같은 prefix로 GitHub Actions workflow 추가:
+//        .github/workflows/<flow>-<action>.yml
+//        scripts/<flow>-<action>.sh
+//        scripts/prompts/<flow>-<action>.md
+//   3) workflow의 트리거를 `repository_dispatch.types: [<event_type>]` 로 맞춘다.
+//
+// 매칭 규칙:
+//   - 메시지가 "/<command> ..." 로 시작하면 해당 flow로 라우팅 (잘라낸 본문만 dispatch)
+//   - 명령어가 없는 평문은 DEFAULT_FLOW 로 폴백 (현재 idea)
+//   - 등록되지 않은 명령어는 도움말 회신
 
 interface Env {
   // secrets
@@ -16,8 +22,40 @@ interface Env {
   // vars
   GH_REPO: string;
   ALLOWED_CHAT_IDS: string;
-  DISPATCH_EVENT_TYPE: string;
 }
+
+interface FlowDef {
+  /** 텔레그램 명령어 (앞의 / 제외, 소문자). 동의어 허용 */
+  commands: string[];
+  /** GitHub repository_dispatch event_type. workflow의 types와 정확히 일치해야 함 */
+  eventType: string;
+  /** 사용자에게 보낼 안내 (명령어만 입력하고 본문 비었을 때) */
+  usageHint: string;
+  /** 접수 직후 텔레그램 회신 텍스트 */
+  ackText: string;
+}
+
+const FLOWS: FlowDef[] = [
+  {
+    commands: ["idea", "todo"],
+    eventType: "idea-submitted",
+    usageHint: "예: /idea 텔레그램 봇으로 메모를 받아 GH Issue로 자동 정리",
+    ackText: "아이디어 접수 완료. 1~2분 내에 Issue 링크를 회신합니다.",
+  },
+  // 새 flow 추가 예시:
+  // {
+  //   commands: ["meeting"],
+  //   eventType: "meeting-summarize",
+  //   usageHint: "예: /meeting <회의록 raw 텍스트>",
+  //   ackText: "회의록 요약 시작. 잠시 후 결과를 회신합니다.",
+  // },
+];
+
+const DEFAULT_FLOW = FLOWS.find((f) => f.commands.includes("idea"))!;
+
+const COMMAND_INDEX: Record<string, FlowDef> = Object.fromEntries(
+  FLOWS.flatMap((f) => f.commands.map((c) => [c.toLowerCase(), f] as const)),
+);
 
 interface TelegramUpdate {
   message?: {
@@ -60,7 +98,6 @@ export default {
 
     const msg = update.message ?? update.edited_message;
     if (!msg) {
-      // 우리가 처리하지 않는 update 종류 (channel_post 등). 200으로 ack.
       return new Response("ok", { status: 200 });
     }
 
@@ -73,7 +110,6 @@ export default {
       const passes =
         (fromId !== undefined && allowed.has(fromId)) || allowed.has(chatId);
       if (!passes) {
-        // 조용히 무시 (응답은 200으로 — 텔레그램이 재시도하지 않게)
         return new Response("ok", { status: 200 });
       }
     }
@@ -84,24 +120,35 @@ export default {
       return new Response("ok", { status: 200 });
     }
 
-    // /idea 접두사가 있으면 잘라낸다
-    const ideaText = stripCommandPrefix(text);
-    if (!ideaText) {
-      await sendTelegramReply(env, chatId, msg.message_id, "예: /idea 텔레그램 봇으로 메모를 받아 GH Issue로 자동 정리");
+    // 3) 명령어 → flow 라우팅
+    const routed = routeCommand(text);
+
+    if (routed.kind === "unknown_command") {
+      await sendTelegramReply(
+        env,
+        chatId,
+        msg.message_id,
+        renderHelp(`알 수 없는 명령어: /${routed.command}`),
+      );
       return new Response("ok", { status: 200 });
     }
 
-    // 3) GitHub repository_dispatch 호출
-    const dispatchResp = await dispatchToGitHub(env, {
+    if (!routed.body) {
+      await sendTelegramReply(env, chatId, msg.message_id, routed.flow.usageHint);
+      return new Response("ok", { status: 200 });
+    }
+
+    // 4) GitHub repository_dispatch
+    const dispatchResp = await dispatchToGitHub(env, routed.flow.eventType, {
       chat_id: chatId,
       message_id: msg.message_id,
-      text: ideaText,
+      text: routed.body,
       submitted_at: new Date(msg.date * 1000).toISOString(),
     });
 
     if (!dispatchResp.ok) {
       const detail = await safeText(dispatchResp);
-      console.error("dispatch failed", dispatchResp.status, detail);
+      console.error("dispatch failed", routed.flow.eventType, dispatchResp.status, detail);
       await sendTelegramReply(
         env,
         chatId,
@@ -111,17 +158,35 @@ export default {
       return new Response("ok", { status: 200 });
     }
 
-    // 4) 사용자에게 처리 중 안내
-    await sendTelegramReply(
-      env,
-      chatId,
-      msg.message_id,
-      "아이디어 접수 완료. 1~2분 내에 Issue 링크를 회신합니다.",
-    );
-
+    // 5) 즉시 ack
+    await sendTelegramReply(env, chatId, msg.message_id, routed.flow.ackText);
     return new Response("ok", { status: 200 });
   },
 };
+
+type RouteResult =
+  | { kind: "matched"; flow: FlowDef; body: string }
+  | { kind: "unknown_command"; command: string };
+
+function routeCommand(text: string): RouteResult {
+  const m = text.match(/^\/(\w+)(?:@[\w_]+)?(?:\s+([\s\S]*))?$/);
+  if (!m) {
+    // 명령어 없는 평문은 default flow
+    return { kind: "matched", flow: DEFAULT_FLOW, body: text };
+  }
+  const cmd = m[1].toLowerCase();
+  const body = (m[2] ?? "").trim();
+  const flow = COMMAND_INDEX[cmd];
+  if (!flow) {
+    return { kind: "unknown_command", command: cmd };
+  }
+  return { kind: "matched", flow, body };
+}
+
+function renderHelp(prefix: string): string {
+  const lines = FLOWS.map((f) => `  /${f.commands[0]} — ${f.usageHint}`);
+  return `${prefix}\n사용 가능한 명령어:\n${lines.join("\n")}`;
+}
 
 function parseAllowedIds(raw: string | undefined): Set<number> {
   if (!raw) return new Set();
@@ -135,15 +200,9 @@ function parseAllowedIds(raw: string | undefined): Set<number> {
   );
 }
 
-function stripCommandPrefix(text: string): string {
-  // "/idea ...", "/idea@botname ..." 형태 처리
-  const m = text.match(/^\/(?:idea|todo)(?:@[\w_]+)?(?:\s+|$)/i);
-  if (!m) return text;
-  return text.slice(m[0].length).trim();
-}
-
 async function dispatchToGitHub(
   env: Env,
+  eventType: string,
   payload: Record<string, unknown>,
 ): Promise<Response> {
   const url = `https://api.github.com/repos/${env.GH_REPO}/dispatches`;
@@ -154,10 +213,10 @@ async function dispatchToGitHub(
       "Authorization": `Bearer ${env.GH_DISPATCH_TOKEN}`,
       "X-GitHub-Api-Version": "2022-11-28",
       "Content-Type": "application/json",
-      "User-Agent": "tg-idea-bridge",
+      "User-Agent": "tg-automation-bridge",
     },
     body: JSON.stringify({
-      event_type: env.DISPATCH_EVENT_TYPE || "idea-submitted",
+      event_type: eventType,
       client_payload: payload,
     }),
   });

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Idea elaborator: Gemini CLI 호출 -> JSON 파싱 -> GitHub Issue 생성 -> Telegram 회신
+# [flow:idea] Idea elaborator: Gemini CLI 호출 -> JSON 파싱 -> GitHub Issue 생성 -> Telegram 회신
+#
+# 명명 규칙: scripts/<flow>-<action>.sh, scripts/prompts/<flow>-<action>.md
 #
 # 필요한 환경변수:
 #   IDEA_TEXT       (필수) 사용자 원문
@@ -15,7 +17,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-PROMPT_FILE="${ROOT_DIR}/scripts/prompts/elaborate.md"
+PROMPT_FILE="${ROOT_DIR}/scripts/prompts/idea-elaborate.md"
 SKILL_FILE="${SKILL_FILE:-${ROOT_DIR}/skills/office-hours.SKILL.md}"
 GEMINI_MODEL="${GEMINI_MODEL:-gemini-2.5-pro}"
 

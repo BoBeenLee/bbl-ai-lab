@@ -81,4 +81,4 @@ jobs:
           GH_TOKEN:  ${{ secrets.GITHUB_TOKEN }}
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.5-pro' }}
-        run: bash scripts/elaborate.sh
+        run: bash scripts/idea-elaborate.sh

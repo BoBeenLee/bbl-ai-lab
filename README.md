@@ -1,35 +1,71 @@
 # bbl-ai-lab
 
-텔레그램으로 던진 아이디어/할 일 메모를, Cloudflare Worker → GitHub Actions → Gemini CLI 파이프라인을 거쳐 자동으로 구체화된 GitHub Issue로 적재한다.
+텔레그램에서 던진 메시지를 Cloudflare Worker가 명령어별로 라우팅해 GitHub Actions를 트리거하고, 그 안에서 Gemini CLI가 결과(Issue 생성, 요약 등)를 만든다. **여러 자동화 flow를 prefix 단위로 쌓아 올릴 수 있는 구조**.
+
+현재 등록된 flow:
+
+| 명령어 | flow | 결과 |
+|--------|------|------|
+| `/idea`, `/todo`, (평문) | `idea` | 아이디어를 구체화해 GitHub Issue 생성 |
 
 ## 전체 흐름
 
 ```
 [Telegram User]
-  │ 텍스트 또는 /idea ...
+  │ /<command> <본문>  또는 평문 (default flow로 라우팅)
   ▼
-[Cloudflare Worker]      ← webhook
+[Cloudflare Worker (tg-automation-bridge)]
   │ secret 검증, chat_id 화이트리스트
-  │ GitHub repository_dispatch 호출
+  │ FLOWS 테이블에서 명령어 → eventType 매핑
+  │ GitHub repository_dispatch (event_type: <flow>-<action>)
   ▼
-[GitHub Action: idea-elaborate.yml]
+[GitHub Action: <flow>-<action>.yml]
   │ Gemini OAuth 복원 → gemini-cli 설치
-  │ skills/office-hours.SKILL.md 컨텍스트로 호출
-  │ JSON 출력 파싱 → gh issue create
-  │ Telegram 회신 (issue 링크)
-  ▼
-[GitHub Issue: 요약 / 문제 / 목표 / 접근 / 리스크 / Open Questions / Next Actions]
+  │ skills/*.SKILL.md 컨텍스트로 호출
+  │ JSON 파싱 → gh issue create / 등
+  │ Telegram 회신
 ```
+
+## 명명 규칙 (prefix)
+
+새 자동화를 추가할 때 모든 산출물이 같은 `<flow>` prefix를 공유하도록 한다. 예: `idea-elaborate`, `meeting-summarize`, `pr-review`.
+
+| 위치 | 패턴 | 예시 |
+|------|------|------|
+| GitHub Actions workflow | `.github/workflows/<flow>-<action>.yml` | `idea-elaborate.yml` |
+| 실행 스크립트 | `scripts/<flow>-<action>.sh` | `idea-elaborate.sh` |
+| Gemini 프롬프트 | `scripts/prompts/<flow>-<action>.md` | `idea-elaborate.md` |
+| repository_dispatch event_type | `<flow>-<action>` | `idea-submitted` (legacy. 향후는 `<flow>-<action>` 권장) |
+| Worker 명령어 등록 | `worker/src/index.ts` 의 `FLOWS[]` | `commands: ["idea","todo"]` |
+
+> 현 시점 `idea` flow의 event_type은 `idea-submitted`로 유지 (호환성). 새 flow부터는 `<flow>-<action>` 컨벤션을 따른다.
 
 ## 디렉토리
 
 | 경로 | 설명 |
 |------|------|
-| `.github/workflows/idea-elaborate.yml` | repository_dispatch 트리거. workflow_dispatch로도 수동 실행 가능. |
-| `scripts/elaborate.sh` | Gemini 호출 → JSON 파싱 → `gh issue create` → Telegram 회신 |
-| `scripts/prompts/elaborate.md` | Gemini 시스템 프롬프트 + 출력 JSON 스키마 |
-| `skills/office-hours.SKILL.md` | Brainstorming 스킬 (gstack/office-hours 출처). Gemini에 컨텍스트로 첨부 |
-| `worker/` | Cloudflare Worker (텔레그램 webhook 수신) |
+| `.github/workflows/idea-elaborate.yml` | `idea` flow workflow. repository_dispatch + workflow_dispatch 트리거. |
+| `scripts/idea-elaborate.sh` | `idea` flow 실행 스크립트 (gemini 호출 → JSON 파싱 → Issue 생성 → Telegram 회신) |
+| `scripts/prompts/idea-elaborate.md` | `idea` flow Gemini 시스템 프롬프트 + 출력 JSON 스키마 |
+| `skills/office-hours.SKILL.md` | Brainstorming 스킬 (gstack/office-hours 출처) |
+| `worker/` | Cloudflare Worker — multi-flow 라우터 |
+
+## 새 flow 추가 가이드
+
+1. **Worker 등록**: `worker/src/index.ts`의 `FLOWS` 테이블에 한 항목 추가.
+   ```ts
+   {
+     commands: ["meeting"],
+     eventType: "meeting-summarize",
+     usageHint: "예: /meeting <회의록 raw 텍스트>",
+     ackText: "회의록 요약 시작.",
+   }
+   ```
+2. **Workflow 추가**: `.github/workflows/meeting-summarize.yml` 작성, 트리거를 `repository_dispatch.types: [meeting-summarize]`로 지정.
+3. **스크립트 / 프롬프트 추가**: `scripts/meeting-summarize.sh`, `scripts/prompts/meeting-summarize.md`.
+4. **(선택) skill 컨텍스트 추가**: `skills/<name>.SKILL.md`.
+5. Worker 재배포 (`wrangler deploy`).
+6. BotFather `/setcommands`에 새 명령어 등록 (선택).
 
 ## 설치 / 운영 가이드
 
@@ -86,7 +122,7 @@ npx wrangler secret put GH_DISPATCH_TOKEN     # 위에서 만든 PAT
 npx wrangler deploy
 ```
 
-배포 후 Worker URL 확보 (`https://tg-idea-bridge.<account>.workers.dev`).
+배포 후 Worker URL 확보 (`https://tg-automation-bridge.<account>.workers.dev`).
 
 ### 5. Telegram setWebhook
 
@@ -94,7 +130,7 @@ npx wrangler deploy
 curl -X POST "https://api.telegram.org/bot<TG_BOT_TOKEN>/setWebhook" \
   -H "Content-Type: application/json" \
   -d '{
-    "url": "https://tg-idea-bridge.<account>.workers.dev/tg-webhook",
+    "url": "https://tg-automation-bridge.<account>.workers.dev/tg-webhook",
     "secret_token": "<TG_WEBHOOK_SECRET 와 동일한 값>",
     "allowed_updates": ["message"]
   }'
@@ -110,6 +146,7 @@ curl -X POST "https://api.telegram.org/bot<TG_BOT_TOKEN>/setWebhook" \
 | Worker 단독 | `curl -X POST $WORKER_URL/tg-webhook -H "X-Telegram-Bot-Api-Secret-Token: $SECRET" -H 'Content-Type: application/json' -d '{"message":{"chat":{"id":<YOUR_ID>},"from":{"id":<YOUR_ID>},"text":"테스트","message_id":1,"date":'$(date +%s)'}}'` | repository_dispatch 트리거되고 Action 실행 |
 | 화이트리스트 | 다른 chat_id로 같은 요청 | Action 미트리거, 200 무응답 |
 | Telegram E2E | 봇에 "아이디어 …" 전송 | "접수 완료" 회신 → 1~2분 내 Issue 링크 회신 |
+| 명령어 라우팅 | `/idea 테스트`, `/todo 테스트`, 평문 모두 idea flow로 / `/unknown 테스트`는 도움말 회신 | 명령어 매핑 동작 확인 |
 
 ## 보안 메모
 
