@@ -36,7 +36,28 @@ if [[ ! -f "$SKILL_FILE" ]]; then
   exit 1
 fi
 
-# 단일 프롬프트 조립 (system + skill context + user idea)
+# URL 사전 fetch: IDEA_TEXT에 http(s) 링크가 있으면 페이지/유튜브 본문을 추출해
+# 프롬프트에 별도 섹션으로 첨부한다. 실패해도 파이프라인은 계속 진행.
+FETCHED_CONTENT=""
+URL_REGEX='https?://[^[:space:]<>"]+'
+CLEAN_URLS=()
+while IFS= read -r u; do
+  # 자연어 문장 끝의 구두점 제거
+  u="${u%[).,;:!?]}"
+  [[ -n "$u" ]] && CLEAN_URLS+=("$u")
+done < <(grep -oE "$URL_REGEX" <<< "$IDEA_TEXT" || true)
+
+if (( ${#CLEAN_URLS[@]} > 0 )); then
+  echo "[elaborate] detected ${#CLEAN_URLS[@]} URL(s) — fetching content" >&2
+  if FETCHED_CONTENT="$(python3 "${ROOT_DIR}/scripts/fetch-url-content.py" "${CLEAN_URLS[@]}" 2>&1)"; then
+    echo "[elaborate] fetched content size: ${#FETCHED_CONTENT} bytes" >&2
+  else
+    echo "[elaborate] WARN: fetch-url-content.py failed, continuing without fetched content" >&2
+    FETCHED_CONTENT=""
+  fi
+fi
+
+# 단일 프롬프트 조립 (system + skill context + user idea + fetched content)
 TMP_PROMPT="$(mktemp)"
 trap 'rm -f "$TMP_PROMPT" "${TMP_OUT:-}" "${TMP_JSON:-}"' EXIT
 
@@ -45,6 +66,9 @@ trap 'rm -f "$TMP_PROMPT" "${TMP_OUT:-}" "${TMP_JSON:-}"' EXIT
   printf '\n\n=== SKILL CONTEXT ===\n\n'
   cat "$SKILL_FILE"
   printf '\n\n=== USER IDEA ===\n\n%s\n' "$IDEA_TEXT"
+  if [[ -n "$FETCHED_CONTENT" ]]; then
+    printf '\n\n=== FETCHED CONTENT ===\n\n%s\n' "$FETCHED_CONTENT"
+  fi
 } > "$TMP_PROMPT"
 
 echo "[elaborate] gemini model=$GEMINI_MODEL skill=$(basename "$SKILL_FILE")" >&2

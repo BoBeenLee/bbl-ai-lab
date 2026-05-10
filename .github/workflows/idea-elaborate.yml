@@ -40,6 +40,11 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install URL fetch dependencies (yt-dlp, trafilatura, youtube-transcript-api)
+        run: |
+          python3 -m pip install --quiet --upgrade pip
+          python3 -m pip install --quiet yt-dlp trafilatura youtube-transcript-api
+
       - name: Restore Gemini OAuth credentials
         env:
           GEMINI_OAUTH_CREDS: ${{ secrets.GEMINI_OAUTH_CREDS }}
