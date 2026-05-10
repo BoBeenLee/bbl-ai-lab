@@ -1,0 +1,84 @@
+name: Idea Elaborate
+
+on:
+  # Cloudflare Worker가 텔레그램 webhook을 받아 호출
+  repository_dispatch:
+    types: [idea-submitted]
+
+  # 수동 / E2E 검증용
+  workflow_dispatch:
+    inputs:
+      text:
+        description: "Idea raw text"
+        required: true
+        type: string
+      chat_id:
+        description: "(optional) Telegram chat id for reply"
+        required: false
+        type: string
+      message_id:
+        description: "(optional) Telegram message id (reply target)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: idea-elaborate-${{ github.event.client_payload.message_id || github.event.inputs.message_id || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  elaborate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Restore Gemini OAuth credentials
+        env:
+          GEMINI_OAUTH_CREDS: ${{ secrets.GEMINI_OAUTH_CREDS }}
+          GEMINI_GOOGLE_EMAIL: ${{ secrets.GEMINI_GOOGLE_EMAIL }}
+        run: |
+          if [ -z "$GEMINI_OAUTH_CREDS" ] || [ -z "$GEMINI_GOOGLE_EMAIL" ]; then
+            echo "ERROR: GEMINI_OAUTH_CREDS / GEMINI_GOOGLE_EMAIL secrets are required" >&2
+            exit 1
+          fi
+          mkdir -p ~/.gemini
+          printf '%s' "$GEMINI_OAUTH_CREDS" | base64 -d > ~/.gemini/oauth_creds.json
+          chmod 600 ~/.gemini/oauth_creds.json
+          cat > ~/.gemini/settings.json <<'JSON'
+          {
+            "security": {
+              "auth": {
+                "selectedType": "oauth-personal"
+              }
+            }
+          }
+          JSON
+          jq -n --arg email "$GEMINI_GOOGLE_EMAIL" '{ active: $email, old: [] }' \
+            > ~/.gemini/google_accounts.json
+
+      - name: Install Gemini CLI
+        run: npm install -g @google/gemini-cli@0.41.1
+
+      - name: Smoke test gemini
+        env:
+          GEMINI_CLI_TRUST_WORKSPACE: 'true'
+        run: gemini --yolo -p "Reply with exactly ok"
+
+      - name: Run elaborator
+        env:
+          GEMINI_CLI_TRUST_WORKSPACE: 'true'
+          IDEA_TEXT: ${{ github.event.client_payload.text || github.event.inputs.text }}
+          CHAT_ID:   ${{ github.event.client_payload.chat_id || github.event.inputs.chat_id }}
+          MSG_ID:    ${{ github.event.client_payload.message_id || github.event.inputs.message_id }}
+          GH_TOKEN:  ${{ secrets.GITHUB_TOKEN }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.5-pro' }}
+        run: bash scripts/idea-elaborate.sh

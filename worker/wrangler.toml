@@ -1,0 +1,14 @@
+name = "tg-automation-bridge"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# 시크릿은 wrangler secret put 으로 주입 (이 파일에 절대 적지 말 것):
+#   wrangler secret put TG_BOT_TOKEN
+#   wrangler secret put TG_WEBHOOK_SECRET
+#   wrangler secret put GH_DISPATCH_TOKEN
+#
+# event_type 은 src/index.ts 의 FLOWS 테이블에서 명령어별로 결정 (정적 var 아님).
+
+[vars]
+GH_REPO = "BoBeenLee/bbl-ai-lab"        # 실제 owner/repo 로 교체
+ALLOWED_CHAT_IDS = ""                    # "12345,67890" 형태 (본인 chat_id)
