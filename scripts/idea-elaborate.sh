@@ -54,8 +54,26 @@ TMP_OUT="$(mktemp)"
 
 # gemini --yolo: 모든 도구 자동 승인. -m: 모델 지정. -p: 프롬프트 inline.
 # (stdin 리디렉션 대신 -p로 비대화형 모드 보장)
-if ! gemini --yolo -m "$GEMINI_MODEL" -p "$(cat "$TMP_PROMPT")" > "$TMP_OUT" 2> >(tee /dev/stderr); then
-  echo "ERROR: gemini call failed" >&2
+# preview 모델의 단발성 502/429 흡수를 위해 1회 재시도. RETRIES env로 조절 가능 (기본 1).
+RETRIES="${RETRIES:-1}"
+MAX_ATTEMPTS=$(( RETRIES + 1 ))
+attempt=0
+gemini_ok=0
+while (( attempt < MAX_ATTEMPTS )); do
+  attempt=$(( attempt + 1 ))
+  if gemini --yolo -m "$GEMINI_MODEL" -p "$(cat "$TMP_PROMPT")" > "$TMP_OUT" 2> >(tee /dev/stderr); then
+    gemini_ok=1
+    break
+  fi
+  echo "[elaborate] gemini attempt $attempt/$MAX_ATTEMPTS failed" >&2
+  if (( attempt < MAX_ATTEMPTS )); then
+    echo "[elaborate] retrying in 5s..." >&2
+    sleep 5
+  fi
+done
+
+if (( gemini_ok != 1 )); then
+  echo "ERROR: gemini call failed after $MAX_ATTEMPTS attempts" >&2
   cat "$TMP_OUT" >&2 || true
   exit 1
 fi
