@@ -67,11 +67,6 @@ jobs:
       - name: Install Gemini CLI
         run: npm install -g @google/gemini-cli@0.41.1
 
-      - name: Smoke test gemini
-        env:
-          GEMINI_CLI_TRUST_WORKSPACE: 'true'
-        run: gemini --yolo -p "Reply with exactly ok"
-
       - name: Run elaborator
         env:
           GEMINI_CLI_TRUST_WORKSPACE: 'true'
