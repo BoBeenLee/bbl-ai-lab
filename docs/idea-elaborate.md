@@ -66,7 +66,7 @@ scripts/idea-elaborate.sh
 
 | Variable | 기본값 | 비고 |
 |----------|--------|------|
-| `GEMINI_MODEL` | `gemini-2.5-pro` | 아래 [Gemini 모델 옵션](#gemini-모델-옵션) 참고 |
+| `GEMINI_MODEL` | `gemini-3-pro-preview` | 아래 [Gemini 모델 옵션](#gemini-모델-옵션) 참고 |
 
 ### Worker 측 (참고)
 
@@ -78,19 +78,22 @@ flow에 직접 영향은 없지만 Worker가 dispatch를 못 하면 이 flow도 
 
 | 식별자 | 세대 | 용도 |
 |--------|------|------|
-| `gemini-3-pro-preview` | Gemini 3 (preview) | 최고 추론 품질, 1M 토큰 컨텍스트 |
+| `gemini-3-pro-preview` | Gemini 3 (preview) | 최고 추론 품질, 1M 토큰 컨텍스트 / **현재 본 flow 기본값** |
 | `gemini-3-flash-preview` | Gemini 3 (preview) | 빠르고 저렴, 동일 컨텍스트 한도 |
-| `gemini-2.5-pro` | Gemini 2.5 (GA) | 안정 / 현재 본 flow 기본값 |
+| `gemini-2.5-pro` | Gemini 2.5 (GA) | 안정성 우선 시 fallback |
 | `gemini-2.5-flash` | Gemini 2.5 (GA) | 빠르고 저렴, 단순 요약/추출에 적합 |
-| `auto` | 메타 | 작업 복잡도에 따라 Gemini 3 라인업 중 자동 선택 (공식 권장) |
+| `auto` | 메타 | 작업 복잡도에 따라 Gemini 3 라인업 중 자동 선택 (공식 권장 / preview 식별자 갱신에 자동 대응) |
 | `auto-2.5` | 메타 | Gemini 2.5 라인업 중 자동 선택 |
 
-OAuth Personal(무료) 한도는 계정 합산 분당 60req / 일 1,000req (gemini-cli README 기준, 모델 합산). aidea 본 flow는 전체 SKILL.md를 컨텍스트로 attach 하기 때문에 (~110KB) Pro 계열이 안전하지만, Open Questions까지만 뽑는 단순 케이스는 Flash로도 충분할 수 있다.
+OAuth Personal(무료) 한도는 계정 합산 분당 60req / 일 1,000req (gemini-cli README 기준, 모델 합산). 본 flow는 전체 SKILL.md를 컨텍스트로 attach 하기 때문에 (~110KB) Pro 계열이 안전하지만, Open Questions까지만 뽑는 단순 케이스는 Flash로도 충분할 수 있다.
 
 추천:
-- 품질 우선 / 일 사용량 적음 → `gemini-3-pro-preview` 또는 `auto`
-- 균형 / 현재 default → `gemini-2.5-pro`
+- **품질 우선 / 현재 default** → `gemini-3-pro-preview`
+- preview 식별자 갱신에 자동 대응 → `auto`
+- GA 안정성 우선 시 fallback → `gemini-2.5-pro`
 - 아이디어 폭발기에 quota 절약 → `gemini-2.5-flash`
+
+> ⚠️ `gemini-3-pro-preview`는 preview 라인업이므로 GA 전환 시 식별자가 `gemini-3-pro` 등으로 변경될 수 있다. 워크플로우가 fail하면 `auto`로 옮기거나 GA 식별자로 바꿀 것. preview 특유의 일시적 502/429는 [scripts/idea-elaborate.sh](../scripts/idea-elaborate.sh)의 1회 재시도 로직이 흡수한다.
 
 설정 변경:
 ```bash

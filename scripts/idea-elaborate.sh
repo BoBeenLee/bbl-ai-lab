@@ -10,7 +10,7 @@
 #   GH_TOKEN        (필수) gh CLI 인증용 (GitHub Action에서는 secrets.GITHUB_TOKEN)
 #   GH_REPO         (선택) issue를 생성할 owner/repo. 미지정시 현재 레포.
 #   TG_BOT_TOKEN    (선택) Telegram 답장 발송용. 비어있으면 답장 생략.
-#   GEMINI_MODEL    (선택) gemini 모델 지정. 기본 gemini-2.5-pro.
+#   GEMINI_MODEL    (선택) gemini 모델 지정. 기본 gemini-3-pro-preview.
 #   SKILL_FILE      (선택) skill 컨텍스트 파일 경로. 기본 skills/office-hours.SKILL.md.
 
 set -euo pipefail
@@ -19,7 +19,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 PROMPT_FILE="${ROOT_DIR}/scripts/prompts/idea-elaborate.md"
 SKILL_FILE="${SKILL_FILE:-${ROOT_DIR}/skills/office-hours.SKILL.md}"
-GEMINI_MODEL="${GEMINI_MODEL:-gemini-2.5-pro}"
+GEMINI_MODEL="${GEMINI_MODEL:-gemini-3-pro-preview}"
 
 if [[ -z "${IDEA_TEXT:-}" ]]; then
   echo "ERROR: IDEA_TEXT is empty" >&2
