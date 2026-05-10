@@ -75,5 +75,5 @@ jobs:
           MSG_ID:    ${{ github.event.client_payload.message_id || github.event.inputs.message_id }}
           GH_TOKEN:  ${{ secrets.GITHUB_TOKEN }}
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
-          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.5-pro' }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-3-pro-preview' }}
         run: bash scripts/idea-elaborate.sh
