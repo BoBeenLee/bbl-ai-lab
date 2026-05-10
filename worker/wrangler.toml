@@ -11,4 +11,4 @@ compatibility_date = "2025-01-01"
 
 [vars]
 GH_REPO = "BoBeenLee/bbl-ai-lab"        # 실제 owner/repo 로 교체
-ALLOWED_CHAT_IDS = ""                    # "12345,67890" 형태 (본인 chat_id)
+ALLOWED_CHAT_IDS = "8266912071"                    # "12345,67890" 형태 (본인 chat_id)
