@@ -9,14 +9,23 @@ idea 이슈가 "무엇·왜"의 단일 진실원이라면, `docs/plans/<issue#>-
      │
      ▼
 2. [idea-elaborate flow]
-     │  GitHub Issue 생성 (label: idea)
-     │  Next Actions 마지막 항목: "계획 명세화: 이 이슈 링크로 클로드 데스크탑에서 plan draft 작성 후 docs/plans/ PR 제출"
+     │  GitHub Issue 생성 (label: idea, 모호하면 needs-clarification 추가)
+     │  본문에 grill-meta 메타 + Open Questions + 글로사리 후보 + ADR 후보 누적 섹션
+     │  Next Actions 마지막 항목: "계획 명세화: docs/plans/ PR 제출"
+     ▼
+2'. [idea-grill-followup flow] (선택 · 반복 가능)
+     │  이슈 코멘트 첫 줄이 `/grill` 또는 `/grill <focus>` 일 때만 발동 (opt-in)
+     │  → 직전 라운드 이후 들어온 답변 코멘트들 + 본문 컨텍스트로 다음 라운드
+     │  → 본문 in-place 갱신 (요약·문제·접근 정제, Open Questions 축소, 글로사리/ADR 후보 누적, 🔥 Grilling Rounds 로그)
+     │  → needs_clarification=false 도달 시 needs-clarification 제거 + grilled 라벨
      ▼
 3. (수동) 클로드 데스크탑에서 이슈 URL 전달
      │  _template.md 를 기반으로 docs/plans/<issue#>-<slug>.md 작성
      │  branch: plan/<issue#>-<slug>
      │  PR title: "plan(#<issue>): <짧은 요지> — initial draft"
      │  PR label: plan
+     │  같은 PR 안에서 이슈의 "글로사리 후보" → CONTEXT.md,
+     │                     이슈의 "ADR 후보"   → docs/adr/000N-*.md 로 옮긴다
      ▼
 4. plan-link-back workflow (자동)
      │  PR opened → 이슈에 "Plan PR opened: <pr_url>" 코멘트
@@ -105,9 +114,77 @@ PR template: `.github/PULL_REQUEST_TEMPLATE/plan.md` 사용 (URL 쿼리: `?templ
 3. frontmatter `updated` 오늘 날짜, `revisions` 에 새 한 줄 추가
 4. PR title `revise N — <요지>`
 
+## Grilling 라운드 → plan PR 핸드오프
+
+`idea-elaborate` 가 만든 이슈 본문은 두 개의 누적 섹션을 가진다:
+
+- `## 글로사리 후보 (CONTEXT.md 반영 예정)` — `/grill` 라운드를 거치며 도메인 용어 정의가 모인다
+- `## ADR 후보 (docs/adr/ 반영 예정)` — `/grill` 라운드를 거치며 hard-to-reverse 결정이 모인다
+
+plan PR 작성자는 이 두 섹션을 **그대로 옮겨 적지 말고** 다음과 같이 처리한다:
+
+1. **글로사리 후보** → `CONTEXT.md` 의 "Language" 섹션에 압축해서 반영. 같은 PR 에 `CONTEXT.md` 변경 포함. plan doc 의 `## Domain language updates` 표에 결과를 1줄씩 기록.
+2. **ADR 후보** → ADR 3조건(아래 포맷 참고) 충족하는 것만 `docs/adr/000N-<slug>.md` 신규 파일로. plan doc 의 `## ADR proposals` 표에 ADR 번호와 자기검증 체크. 조건 미달이면 명시적으로 "ADR 만들지 않음 — <이유>" 라고 plan 에 적는다.
+3. **CONTEXT.md / docs/adr/ 디렉터리가 아직 없으면** 이 plan PR 이 lazy 생성한다 (포맷 아래).
+
+`idea-grill.sh` 는 절대 `CONTEXT.md` / ADR 을 자동 commit 하지 않는다 — 후보 누적까지가 끝.
+
+## CONTEXT.md 포맷 (1쪽)
+
+repo root 에 단일 `CONTEXT.md`. 도메인 용어집 (glossary) 일 뿐, 구현 결정의 저장소가 아니다.
+
+```md
+# bbl-ai-lab Context
+
+## Language
+
+**Idea**:
+사용자가 텔레그램으로 흘려보낸 단편적 메모/할 일. 아직 검증되지 않음.
+_Avoid_: thought, note (idea 로 통일)
+
+**Issue**:
+idea-elaborate 가 생성한 GitHub Issue. 1 idea ↔ 1 issue.
+
+**Grilling Round**:
+이슈 코멘트의 `/grill` 트리거로 idea-grill-followup workflow 가 도는 1회 라운드. 누적되며 본문이 정제된다.
+```
+
+규칙:
+
+- **Opinionated**. 동의어가 있으면 하나 고르고 나머지는 `_Avoid_` 로 명시.
+- **1~2문장 정의**. 무엇 _인지_, 무엇을 _하는지_ 아님.
+- **프로젝트 고유 용어만**. timeout / retry / cache 같은 일반 프로그래밍 개념은 제외.
+- 충돌하면 "Flagged ambiguities" 절을 추가해 해소 방안 적기.
+- 자연스러운 클러스터가 생기면 하위 헤더로 그룹화, 그렇지 않으면 flat list.
+
+## ADR 포맷 (1쪽)
+
+`docs/adr/0001-<slug>.md`, `0002-...` 식 순차 번호. 디렉터리 자체도 첫 ADR 이 생길 때 lazy 생성.
+
+```md
+# {결정 한 줄 (예: docs/plans/ 도입)}
+
+{1~3문장: 무엇을 정했고 왜.}
+```
+
+옵션 절(필요할 때만):
+
+- **Status** frontmatter (`proposed | accepted | deprecated | superseded by ADR-NNNN`)
+- **Considered Options** — 기각된 대안 메모할 가치 있을 때만
+- **Consequences** — 비자명한 부수효과만
+
+ADR 을 만들 때는 다음 3조건을 **모두** 충족해야 한다:
+
+1. **Hard to reverse** — 나중에 바꾸려면 분기 단위 비용
+2. **Surprising without context** — 미래의 리더가 "왜 이렇게 했지?" 라고 물을 만함
+3. **Real trade-off** — 진짜 대안이 있고 그 중 골랐음
+
+미달이면 ADR 만들지 않는다. plan doc 의 `## ADR proposals` 에 "조건 미달 — 생략" 1줄로 마무리.
+
 ## 비범위
 
 - LLM 이 GHA 안에서 plan doc 을 자동 작성하지 않는다. 작성·보강은 전부 클로드 데스크탑.
 - 텔레그램에 `/plan` 명령어 추가하지 않는다. Worker FLOWS 무변경.
 - plan doc 을 PR 없이 main 에 직접 push 하는 경로 없음.
 - 다중 이슈 ↔ 1 plan 매핑 미지원 (1:1 만).
+- `idea-grill-followup` 워크플로는 `CONTEXT.md` / `docs/adr/` 를 자동 commit 하지 않는다 — 후보 누적까지만.
