@@ -1,0 +1,136 @@
+name: Idea Grill Followup
+
+# 이슈 코멘트로 `/grill` (또는 `/grill <focus>`) 이 들어왔을 때 다음 grilling 라운드를 진행한다.
+# - opt-in 트리거: 기본은 off. 매치 안 되는 코멘트는 비용 0 으로 컷.
+# - 운영 모델: docs/plans/README.md, scripts/idea-grill.sh
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: idea-grill-${{ github.event.issue.number }}-${{ github.event.comment.id }}
+  cancel-in-progress: false
+
+jobs:
+  grill:
+    # 1차 컷: 라벨 + 봇 제외 + /grill 마커.
+    # 정확한 정규식 검증과 ALLOWED_GITHUB_LOGINS 화이트리스트는 step 안에서 다시 확인.
+    if: >-
+      github.event.issue.pull_request == null
+      && contains(github.event.issue.labels.*.name, 'idea')
+      && github.event.comment.user.type != 'Bot'
+      && github.event.comment.user.login != 'github-actions[bot]'
+      && startsWith(github.event.comment.body, '/grill')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verify trigger pattern and actor
+        id: gate
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          ACTOR: ${{ github.event.comment.user.login }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+          ALLOWED_GITHUB_LOGINS: ${{ secrets.ALLOWED_GITHUB_LOGINS }}
+        run: |
+          set -euo pipefail
+
+          # 첫 줄만 추출해서 ^/grill(\s+<focus>)?$ 정규식 정확 매치
+          FIRST_LINE="$(printf '%s' "$COMMENT_BODY" | head -n 1 | tr -d '\r')"
+          if ! [[ "$FIRST_LINE" =~ ^/grill([[:space:]]+[^[:space:]].*)?[[:space:]]*$ ]]; then
+            echo "::notice::comment first line does not match /grill pattern; skipping"
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # ALLOWED_GITHUB_LOGINS 가 비어 있으면 issue 작성자만 허용
+          if [[ -z "${ALLOWED_GITHUB_LOGINS:-}" ]]; then
+            if [[ "$ACTOR" != "$ISSUE_AUTHOR" ]]; then
+              echo "::notice::actor ($ACTOR) is not issue author ($ISSUE_AUTHOR), and no ALLOWED_GITHUB_LOGINS set; skipping"
+              echo "ok=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          else
+            # 콤마 구분 화이트리스트
+            ALLOWED=0
+            IFS=',' read -r -a LOGINS <<< "$ALLOWED_GITHUB_LOGINS"
+            for L in "${LOGINS[@]}"; do
+              L="$(echo "$L" | tr -d '[:space:]')"
+              if [[ "$L" == "$ACTOR" ]]; then
+                ALLOWED=1
+                break
+              fi
+            done
+            if (( ALLOWED == 0 )); then
+              echo "::notice::actor ($ACTOR) not in ALLOWED_GITHUB_LOGINS; skipping"
+              echo "ok=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
+          echo "ok=true" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        if: steps.gate.outputs.ok == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        if: steps.gate.outputs.ok == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Restore Gemini OAuth credentials
+        if: steps.gate.outputs.ok == 'true'
+        env:
+          GEMINI_OAUTH_CREDS: ${{ secrets.GEMINI_OAUTH_CREDS }}
+          GEMINI_GOOGLE_EMAIL: ${{ secrets.GEMINI_GOOGLE_EMAIL }}
+        run: |
+          if [ -z "$GEMINI_OAUTH_CREDS" ] || [ -z "$GEMINI_GOOGLE_EMAIL" ]; then
+            echo "ERROR: GEMINI_OAUTH_CREDS / GEMINI_GOOGLE_EMAIL secrets are required" >&2
+            exit 1
+          fi
+          mkdir -p ~/.gemini
+          printf '%s' "$GEMINI_OAUTH_CREDS" | base64 -d > ~/.gemini/oauth_creds.json
+          chmod 600 ~/.gemini/oauth_creds.json
+          cat > ~/.gemini/settings.json <<'JSON'
+          {
+            "security": {
+              "auth": {
+                "selectedType": "oauth-personal"
+              }
+            }
+          }
+          JSON
+          jq -n --arg email "$GEMINI_GOOGLE_EMAIL" '{ active: $email, old: [] }' \
+            > ~/.gemini/google_accounts.json
+
+      - name: Install Gemini CLI
+        if: steps.gate.outputs.ok == 'true'
+        run: npm install -g @google/gemini-cli@0.41.1
+
+      - name: Acknowledge /grill (post short ack comment)
+        if: steps.gate.outputs.ok == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" \
+            --body "👋 /grill 감지 — 다음 grilling 라운드를 시작합니다…" \
+            >/dev/null
+
+      - name: Run grill followup
+        if: steps.gate.outputs.ok == 'true'
+        env:
+          GEMINI_CLI_TRUST_WORKSPACE: 'true'
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-3-pro-preview' }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          TRIGGER_COMMENT_ID: ${{ github.event.comment.id }}
+          TRIGGER_COMMENT_BODY: ${{ github.event.comment.body }}
+        run: bash scripts/idea-grill.sh

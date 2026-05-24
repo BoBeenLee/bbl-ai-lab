@@ -126,12 +126,18 @@ fi
 
 TITLE="$(jq -r '.title' "$TMP_JSON")"
 NEEDS_CLARIFY="$(jq -r '.needs_clarification // false' "$TMP_JSON")"
+GRILL_LEVEL="$(jq -r '.grill_level // "standard"' "$TMP_JSON")"
 
 # Issue 본문에 들어갈 doc 절대 URL 빌드 (이슈 본문에서는 상대 링크가 작동하지 않음)
 REPO_PATH="${GH_REPO:-${GITHUB_REPOSITORY:-BoBeenLee/bbl-ai-lab}}"
 DOCS_PLANS_README_URL="https://github.com/${REPO_PATH}/blob/main/docs/plans/README.md"
 TEMPLATE_URL="https://github.com/${REPO_PATH}/blob/main/docs/plans/_template.md"
 PR_TEMPLATE_URL="https://github.com/${REPO_PATH}/blob/main/.github/PULL_REQUEST_TEMPLATE/plan.md"
+
+# grill-meta HTML 코멘트: followup workflow (idea-grill.sh) 가 이슈 본문에서 파싱해
+# 라운드 카운터·텔레그램 회신 대상·grill_level 을 복원한다.
+GRILL_META_BLOCK="$(printf '<!-- bbl-grill-meta\nround: 1\ngrill_level: %s\nchat_id: %s\nmsg_id: %s\n-->\n\n' \
+  "$GRILL_LEVEL" "${CHAT_ID:-}" "${MSG_ID:-}")"
 
 # Issue 본문 마크다운 생성
 BODY="$(
@@ -140,7 +146,9 @@ BODY="$(
     --arg plans_readme "$DOCS_PLANS_README_URL" \
     --arg plan_tmpl "$TEMPLATE_URL" \
     --arg pr_tmpl "$PR_TEMPLATE_URL" \
+    --arg meta "$GRILL_META_BLOCK" \
     '
+    $meta +
     "> 원문 (Telegram):\n> " + ($raw | gsub("\n";"\n> ")) + "\n\n" +
     "## 요약\n" + (.summary // "") + "\n\n" +
     "## 문제\n" + (.problem // "") + "\n\n" +
@@ -148,10 +156,31 @@ BODY="$(
     "## Non-goals\n" + (((.non_goals // []) | map("- " + .) | join("\n")) // "") + "\n\n" +
     "## 접근\n" + (.approach // "") + "\n\n" +
     "## 리스크\n" + (((.risks // []) | map("- " + .) | join("\n")) // "") + "\n\n" +
+    "> 🔥 Grilling round 1 (level: " + (.grill_level // "standard") + ") — 이 질문들에 답한 뒤 **다음 라운드를 돌리려면** 새 코멘트의 첫 줄에 `/grill` 을 적어주세요. 특정 영역에 집중시키려면 `/grill <focus>` (예: `/grill 성공 지표`). 그냥 답변만 다는 코멘트는 무시됩니다.\n" +
+    (if (.next_grill_focus // "") != "" then "> 다음 라운드 권장 focus: **" + .next_grill_focus + "**\n" else "" end) +
+    "\n" +
     "## Open Questions\n" + (((.open_questions // []) | map("- [ ] " + .) | join("\n")) // "") + "\n\n" +
     "## Next Actions\n" + (
       ((.next_actions // []) + ["계획 명세화: 이 이슈 링크로 클로드 데스크탑에서 plan draft 작성 후 `docs/plans/` PR 제출 (절차는 본문 하단 참고)"])
       | map("- [ ] " + .) | join("\n")
+    ) + "\n\n" +
+    "## 글로사리 후보 (CONTEXT.md 반영 예정)\n" + (
+      (.glossary_candidates // []) |
+      if length == 0 then "_없음 — grilling 라운드에서 채워집니다._"
+      else map(
+        "- **" + .term + "**: " + (.proposed_definition // "")
+        + (if ((.conflicts_with // []) | length) > 0 then " _(충돌: " + ((.conflicts_with // []) | join(", ")) + ")_" else "" end)
+      ) | join("\n")
+      end
+    ) + "\n\n" +
+    "## ADR 후보 (docs/adr/ 반영 예정)\n" + (
+      (.adr_candidates // []) |
+      if length == 0 then "_없음 — grilling 라운드에서 채워집니다._"
+      else map(
+        "- **" + .title + "**: " + (.why // "")
+        + (if ((.alternatives // []) | length) > 0 then " _(대안: " + ((.alternatives // []) | join(", ")) + ")_" else "" end)
+      ) | join("\n")
+      end
     ) + "\n\n---\n\n" +
     "<details>\n<summary>계획 명세화 PR 플로우</summary>\n\n" +
     "이 이슈로 plan draft 를 작성할 때 따르는 표준 절차. 클로드 데스크탑/로컬에 이 이슈 URL 만 던지면 아래대로 진행한다.\n\n" +
@@ -162,6 +191,7 @@ BODY="$(
     "- PR template: [plan.md](" + $pr_tmpl + ") 사용\n" +
     "- frontmatter 필수 키: `issue, issue_url, title, status, owner, created, updated, revisions`\n" +
     "- PR open/merge 시 `plan-link-back` 워크플로가 이 이슈에 자동 코멘트 + `has-plan` 라벨 부착\n" +
+    "- grilling 후보(글로사리/ADR) 는 plan PR 에서 `CONTEXT.md` / `docs/adr/000N-*.md` 로 옮긴다\n" +
     "- 보강은 같은 plan 파일을 새 branch + PR (`revise N — <요지>`) 로\n\n" +
     "전체 가이드: [docs/plans/README.md](" + $plans_readme + ")\n" +
     "</details>\n"
