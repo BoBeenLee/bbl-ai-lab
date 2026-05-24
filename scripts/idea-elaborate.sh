@@ -127,9 +127,20 @@ fi
 TITLE="$(jq -r '.title' "$TMP_JSON")"
 NEEDS_CLARIFY="$(jq -r '.needs_clarification // false' "$TMP_JSON")"
 
+# Issue 본문에 들어갈 doc 절대 URL 빌드 (이슈 본문에서는 상대 링크가 작동하지 않음)
+REPO_PATH="${GH_REPO:-${GITHUB_REPOSITORY:-BoBeenLee/bbl-ai-lab}}"
+DOCS_PLANS_README_URL="https://github.com/${REPO_PATH}/blob/main/docs/plans/README.md"
+TEMPLATE_URL="https://github.com/${REPO_PATH}/blob/main/docs/plans/_template.md"
+PR_TEMPLATE_URL="https://github.com/${REPO_PATH}/blob/main/.github/PULL_REQUEST_TEMPLATE/plan.md"
+
 # Issue 본문 마크다운 생성
 BODY="$(
-  jq -r --arg raw "$IDEA_TEXT" '
+  jq -r \
+    --arg raw "$IDEA_TEXT" \
+    --arg plans_readme "$DOCS_PLANS_README_URL" \
+    --arg plan_tmpl "$TEMPLATE_URL" \
+    --arg pr_tmpl "$PR_TEMPLATE_URL" \
+    '
     "> 원문 (Telegram):\n> " + ($raw | gsub("\n";"\n> ")) + "\n\n" +
     "## 요약\n" + (.summary // "") + "\n\n" +
     "## 문제\n" + (.problem // "") + "\n\n" +
@@ -139,9 +150,21 @@ BODY="$(
     "## 리스크\n" + (((.risks // []) | map("- " + .) | join("\n")) // "") + "\n\n" +
     "## Open Questions\n" + (((.open_questions // []) | map("- [ ] " + .) | join("\n")) // "") + "\n\n" +
     "## Next Actions\n" + (
-      ((.next_actions // []) + ["계획 명세화: 이 이슈 링크로 클로드 데스크탑에서 plan draft 작성 후 `docs/plans/` PR 제출 (가이드: docs/plans/README.md)"])
+      ((.next_actions // []) + ["계획 명세화: 이 이슈 링크로 클로드 데스크탑에서 plan draft 작성 후 `docs/plans/` PR 제출 (절차는 본문 하단 참고)"])
       | map("- [ ] " + .) | join("\n")
-    ) + "\n"
+    ) + "\n\n---\n\n" +
+    "<details>\n<summary>계획 명세화 PR 플로우</summary>\n\n" +
+    "이 이슈로 plan draft 를 작성할 때 따르는 표준 절차. 클로드 데스크탑/로컬에 이 이슈 URL 만 던지면 아래대로 진행한다.\n\n" +
+    "- 파일: `docs/plans/<이슈번호>-<slug>.md` ([template](" + $plan_tmpl + "))\n" +
+    "- branch: `plan/<이슈번호>-<slug>`\n" +
+    "- PR title: `plan(#<이슈번호>): <짧은 요지> — initial draft`\n" +
+    "- PR body 첫 줄: `Closes-with #<이슈번호> (plan only — issue stays open until shipped)` (실제 close 는 status=shipped 시 자동)\n" +
+    "- PR template: [plan.md](" + $pr_tmpl + ") 사용\n" +
+    "- frontmatter 필수 키: `issue, issue_url, title, status, owner, created, updated, revisions`\n" +
+    "- PR open/merge 시 `plan-link-back` 워크플로가 이 이슈에 자동 코멘트 + `has-plan` 라벨 부착\n" +
+    "- 보강은 같은 plan 파일을 새 branch + PR (`revise N — <요지>`) 로\n\n" +
+    "전체 가이드: [docs/plans/README.md](" + $plans_readme + ")\n" +
+    "</details>\n"
   ' "$TMP_JSON"
 )"
 
