@@ -138,7 +138,10 @@ BODY="$(
     "## 접근\n" + (.approach // "") + "\n\n" +
     "## 리스크\n" + (((.risks // []) | map("- " + .) | join("\n")) // "") + "\n\n" +
     "## Open Questions\n" + (((.open_questions // []) | map("- [ ] " + .) | join("\n")) // "") + "\n\n" +
-    "## Next Actions\n" + (((.next_actions // []) | map("- [ ] " + .) | join("\n")) // "") + "\n"
+    "## Next Actions\n" + (
+      ((.next_actions // []) + ["계획 명세화: 이 이슈 링크로 클로드 데스크탑에서 plan draft 작성 후 `docs/plans/` PR 제출 (가이드: docs/plans/README.md)"])
+      | map("- [ ] " + .) | join("\n")
+    ) + "\n"
   ' "$TMP_JSON"
 )"
 
