@@ -10,6 +10,20 @@
 
 > 새 flow를 추가하면 이 표에 한 줄, 그리고 `docs/<flow>-<action>.md`에 상세 문서를 더한다.
 
+## 계획 관리 (`docs/plans/`)
+
+idea 이슈가 만들어진 다음 단계인 **계획 명세화**는 클로드 데스크탑/로컬에서 사람이 직접 진행한다. 산출물은 `docs/plans/<issue#>-<slug>.md` 로 PR 적재되고, 보강이 필요하면 같은 파일에 새 PR (revision) 을 올린다. `.github/workflows/plan-link-back.yml` 가 PR open/merge 시 연결 이슈에 자동 코멘트와 `has-plan` 라벨을 부착하고, `status: shipped` 면 이슈를 close 한다.
+
+```
+/idea → idea 이슈 생성 → (수동) 클로드 데스크탑에서 plan draft → docs/plans/ PR
+                                                       │
+                       ┌───────────── plan-link-back (자동) ─────────────┐
+                       ▼                                                  ▼
+                이슈 코멘트                                       has-plan 라벨 / close
+```
+
+자세한 운영 가이드와 template, status 전환 규칙은 [docs/plans/README.md](docs/plans/README.md) 참고.
+
 ## 공통 아키텍처
 
 ```
