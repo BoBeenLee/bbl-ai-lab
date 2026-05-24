@@ -1,0 +1,154 @@
+name: Plan Link-back
+
+# docs/plans/<#>-<slug>.md 가 포함된 PR 의 open/merge 이벤트를 받아
+# 연결 이슈에 코멘트 + has-plan 라벨 + (status: shipped 면) close 한다.
+#
+# 자세한 운영 모델: docs/plans/README.md
+
+on:
+  pull_request_target:
+    types: [opened, reopened, closed]
+    paths:
+      - "docs/plans/**"
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: plan-link-back-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  link-back:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Link back
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          EVENT_ACTION: ${{ github.event.action }}
+          MERGED: ${{ github.event.pull_request.merged }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # 1) PR이 변경한 docs/plans/*.md 추출
+          mapfile -t PLAN_FILES < <(
+            git diff --name-only "origin/${BASE_REF}...HEAD" \
+              | grep -E '^docs/plans/.*\.md$' \
+              | grep -Ev '^docs/plans/(README|_template)\.md$' \
+              || true
+          )
+
+          if (( ${#PLAN_FILES[@]} == 0 )); then
+            echo "[link-back] no plan doc files changed; nothing to do"
+            exit 0
+          fi
+
+          # has-plan 라벨이 없으면 생성 (이미 있으면 무시)
+          gh label create has-plan \
+            --repo "$REPO" \
+            --color "0e8a16" \
+            --description "Linked plan doc(s) exist under docs/plans/" \
+            >/dev/null 2>&1 || true
+
+          for PLAN_FILE in "${PLAN_FILES[@]}"; do
+            echo "[link-back] processing: $PLAN_FILE"
+
+            # 2) frontmatter 파싱 (issue, status, revisions 길이)
+            FM_JSON="$(python3 - "$PLAN_FILE" <<'PY'
+          import json, re, sys, pathlib
+
+          path = pathlib.Path(sys.argv[1])
+          text = path.read_text(encoding="utf-8")
+          m = re.match(r"^---\s*\n(.*?)\n---\s*\n", text, re.DOTALL)
+          if not m:
+              print(json.dumps({"error": "no frontmatter"}))
+              sys.exit(0)
+          fm = m.group(1)
+
+          def grab(key):
+              mm = re.search(rf"^{key}\s*:\s*(.+?)\s*$", fm, re.MULTILINE)
+              return mm.group(1).strip() if mm else None
+
+          issue = grab("issue")
+          status = grab("status")
+          # status 값에 인라인 코멘트가 붙어 있을 수 있음 ("draft  # ...")
+          if status:
+              status = status.split("#", 1)[0].strip().strip('"').strip("'")
+
+          # revisions: 리스트 항목 수 카운트 (각 항목이 "- {...}" 라인)
+          rev_count = 0
+          in_rev = False
+          for line in fm.splitlines():
+              if re.match(r"^revisions\s*:", line):
+                  in_rev = True
+                  continue
+              if in_rev:
+                  if re.match(r"^\S", line):
+                      in_rev = False
+                  elif re.match(r"^\s*-\s", line):
+                      rev_count += 1
+
+          print(json.dumps({
+              "issue": issue,
+              "status": status,
+              "revisions": rev_count,
+          }))
+          PY
+          )"
+
+            ISSUE_NUM="$(printf '%s' "$FM_JSON" | jq -r '.issue // empty' | tr -d '"')"
+            STATUS="$(printf '%s' "$FM_JSON" | jq -r '.status // empty')"
+            REV_N="$(printf '%s' "$FM_JSON" | jq -r '.revisions // 0')"
+
+            if [[ -z "$ISSUE_NUM" || "$ISSUE_NUM" == "0" ]]; then
+              echo "[link-back] $PLAN_FILE: no valid issue in frontmatter, skipping"
+              continue
+            fi
+
+            DOC_URL="https://github.com/${REPO}/blob/${BASE_REF}/${PLAN_FILE}"
+
+            case "$EVENT_ACTION" in
+              opened|reopened)
+                gh issue comment "$ISSUE_NUM" \
+                  --repo "$REPO" \
+                  --body "Plan PR ${EVENT_ACTION}: ${PR_URL}"$'\n'"파일: \`${PLAN_FILE}\`"
+                ;;
+              closed)
+                if [[ "$MERGED" != "true" ]]; then
+                  echo "[link-back] PR closed without merge; no comment"
+                  continue
+                fi
+
+                gh issue comment "$ISSUE_NUM" \
+                  --repo "$REPO" \
+                  --body "Plan merged (revision ${REV_N}): ${DOC_URL}"$'\n'"PR: ${PR_URL} · status: \`${STATUS:-?}\`"
+
+                gh issue edit "$ISSUE_NUM" \
+                  --repo "$REPO" \
+                  --add-label has-plan \
+                  >/dev/null 2>&1 || true
+
+                if [[ "$STATUS" == "shipped" || "$STATUS" == "abandoned" ]]; then
+                  REASON="completed"
+                  [[ "$STATUS" == "abandoned" ]] && REASON="not planned"
+                  gh issue close "$ISSUE_NUM" \
+                    --repo "$REPO" \
+                    --reason "$REASON" \
+                    >/dev/null 2>&1 || true
+                fi
+                ;;
+            esac
+          done
