@@ -2,12 +2,13 @@
 issue: 24
 issue_url: https://github.com/BoBeenLee/bbl-ai-lab/issues/24
 title: mattpocock/skills 기반 Grilling 플로우 도입
-status: draft
+status: shipped
 owner: BoBeenLee
 created: 2026-05-24
 updated: 2026-05-24
 revisions:
-  - { date: 2026-05-24, pr: 0, note: "initial draft — 비동기 코멘트 grilling + CONTEXT.md/ADR 후보 누적" }
+  - { date: 2026-05-24, pr: 25, note: "initial draft — 비동기 코멘트 grilling + CONTEXT.md/ADR 후보 누적" }
+  - { date: 2026-05-24, pr: 28, note: "shipped — impl 머지 (feat/24-grilling-flow)" }
 ---
 
 # Grilling 플로우 도입: 단발성 elaborate → 비동기 grilling 라운드
@@ -142,4 +143,5 @@ mattpocock/skills 의 `grill-me` / `grill-with-docs` / `to-prd` 는 (1) 의사�
 
 ## Revisions
 
-- 2026-05-24 (#TBD): initial draft — 비동기 코멘트 grilling + CONTEXT.md/ADR 후보 누적
+- 2026-05-24 (#25): initial draft — 비동기 코멘트 grilling + CONTEXT.md/ADR 후보 누적
+- 2026-05-24 (#28): shipped — impl 머지 (feat/24-grilling-flow)
