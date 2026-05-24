@@ -7,7 +7,8 @@ owner: BoBeenLee
 created: 2026-05-24
 updated: 2026-05-24
 revisions:
-  - { date: 2026-05-24, pr: 0, note: "initial draft — PoC 4개 플랫폼 (원티드/점핏/HN/RemoteOK) + 주간 리포트" }
+  - { date: 2026-05-24, pr: 19, note: "initial draft — PoC 4개 플랫폼 (원티드/점핏/HN/RemoteOK) + 주간 리포트" }
+  - { date: 2026-05-24, pr: 0, note: "revise 2 — 초안의 #TBD 자리표시자를 #19 로 채움" }
 ---
 
 # 채용 시장 데이터 수집/분석 파이프라인 (국내 + 국외)
@@ -105,4 +106,5 @@ Per-JD 추출 스키마:
 
 ## Revisions
 
-- 2026-05-24 (#TBD): initial draft — PoC 4개 플랫폼 (원티드/점핏/HN/RemoteOK) + 주간 리포트
+- 2026-05-24 (#19): initial draft — PoC 4개 플랫폼 (원티드/점핏/HN/RemoteOK) + 주간 리포트
+- 2026-05-24 (#TBD): revise 2 — 초안의 `#TBD` 자리표시자를 `#19` 로 채움
