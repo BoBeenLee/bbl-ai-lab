@@ -34,8 +34,9 @@ jobs:
         env:
           COMMENT_BODY: ${{ github.event.comment.body }}
           ACTOR: ${{ github.event.comment.user.login }}
-          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
           ALLOWED_GITHUB_LOGINS: ${{ secrets.ALLOWED_GITHUB_LOGINS }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
 
@@ -47,15 +48,8 @@ jobs:
             exit 0
           fi
 
-          # ALLOWED_GITHUB_LOGINS 가 비어 있으면 issue 작성자만 허용
-          if [[ -z "${ALLOWED_GITHUB_LOGINS:-}" ]]; then
-            if [[ "$ACTOR" != "$ISSUE_AUTHOR" ]]; then
-              echo "::notice::actor ($ACTOR) is not issue author ($ISSUE_AUTHOR), and no ALLOWED_GITHUB_LOGINS set; skipping"
-              echo "ok=false" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-          else
-            # 콤마 구분 화이트리스트
+          if [[ -n "${ALLOWED_GITHUB_LOGINS:-}" ]]; then
+            # 명시적 화이트리스트가 설정돼 있으면 그것만 통과
             ALLOWED=0
             IFS=',' read -r -a LOGINS <<< "$ALLOWED_GITHUB_LOGINS"
             for L in "${LOGINS[@]}"; do
@@ -70,6 +64,20 @@ jobs:
               echo "ok=false" >> "$GITHUB_OUTPUT"
               exit 0
             fi
+          else
+            # ALLOWED 미설정 폴백: 레포에 write 이상 권한 있는 사람만 통과.
+            # (idea-elaborate 가 만든 이슈의 작성자는 github-actions[bot] 이라
+            #  "issue author 만" 폴백은 의미가 없어서 collab 권한 검사로 전환)
+            PERM="$(gh api "repos/$REPO/collaborators/$ACTOR/permission" \
+              --jq '.permission' 2>/dev/null || echo "none")"
+            case "$PERM" in
+              admin|maintain|write) ;;
+              *)
+                echo "::notice::actor ($ACTOR) lacks write access (perm=$PERM) and ALLOWED_GITHUB_LOGINS unset; skipping"
+                echo "ok=false" >> "$GITHUB_OUTPUT"
+                exit 0
+                ;;
+            esac
           fi
 
           echo "ok=true" >> "$GITHUB_OUTPUT"
