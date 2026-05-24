@@ -27,7 +27,7 @@ mattpocock/skills 의 `grill-me` / `grill-with-docs` / `to-prd` 는 (1) 의사�
 - **단발 호출은 유지**한다. 라운드 사이의 상태는 GitHub Issue 본문/코멘트가 유일한 진실원이다 (Worker 에 상태 없음).
 - **강도는 프롬프트 휴리스틱으로 자동**. 입력 길이·URL 유무·구체성 신호를 보고 LLM이 `grill_level ∈ {light, standard, deep}` 을 스스로 결정.
 - **CONTEXT.md / ADR 자동 commit 안 함**. 후보를 이슈 본문에 누적시켜 plan PR 작성자가 검토/병합한다. 자동 PR 생성은 추후 별도 plan.
-- **bot 폭주 차단**. followup 워크플로는 actor가 bot/Actions이거나 코멘트에 `[skip-grill]` 토큰이 있으면 즉시 종료. ALLOWED 화이트리스트 재사용.
+- **followup 워크플로는 명시적 opt-in**. 코멘트 첫 줄이 정확히 `/grill` 또는 `/grill <focus>` 일 때만 실행. 일반 코멘트는 무시 (LLM 비용/노이즈 차단). bot/Actions 코멘트는 별도로 한 번 더 거른다.
 - **`worker/src/index.ts` 미변경** (이슈 #24 본문의 "텔레그램에 /plan 명령어 추가하지 않는다" 비범위 정신 그대로).
 
 ### 1차 elaborate 프롬프트 개편 (`scripts/prompts/idea-elaborate.md`)
@@ -44,8 +44,9 @@ mattpocock/skills 의 `grill-me` / `grill-with-docs` / `to-prd` 는 (1) 의사�
 
 ### Followup grilling 스크립트/프롬프트 (`scripts/idea-grill.sh`, `scripts/prompts/idea-grill.md`)
 
-- 입력: 이슈 번호, 새 코멘트 본문(또는 코멘트 ID).
-- 동작: `gh issue view <#> --json body,comments` 로 전체 맥락 적재 → grill 프롬프트에 주입 → Gemini 호출 → JSON 반환.
+- 입력: 이슈 번호, 트리거 코멘트 ID, 파싱된 `manual_focus`(아래 슬래시 명령 인자, 없으면 빈 문자열).
+- 코멘트 파싱: `^/grill(\s+(.*))?$` 정규식이 첫 줄에 매치되어야 진행. `manual_focus` 가 있으면 grill 프롬프트의 `=== MANUAL FOCUS ===` 섹션으로 주입돼 LLM이 그 영역을 우선 집요하게 캐묻게 한다.
+- 동작: `gh issue view <#> --json body,comments` 로 전체 맥락 + `/grill` 직전까지의 코멘트들(=새 답변들)을 적재 → grill 프롬프트에 주입 → Gemini 호출 → JSON 반환.
 - 출력 JSON 스키마:
   - `resolved_questions: [원래질문문자열]` — 이번 라운드에서 답이 들어온 것
   - `remaining_questions: [string]` — 여전히 미해소
@@ -66,12 +67,13 @@ mattpocock/skills 의 `grill-me` / `grill-with-docs` / `to-prd` 는 (1) 의사�
 ### Followup 워크플로 (`.github/workflows/idea-grill-followup.yml`)
 
 - 트리거: `issue_comment` (types: `[created]`).
-- Guard: 다음 중 하나면 즉시 종료
-  - `github.event.issue.labels` 에 `idea` 또는 `needs-clarification` 없음
-  - `github.event.comment.user.type == 'Bot'` 또는 actor 가 `github-actions[bot]`
-  - 코멘트 본문에 `[skip-grill]` 토큰
-  - actor 가 ALLOWED 화이트리스트 밖 (`secrets.ALLOWED_GITHUB_LOGINS` 신설, 콤마구분 — 비어있으면 issue author 만 허용)
-- 단계: 기존 idea-elaborate.yml과 동일한 setup (Gemini OAuth 복원, Python deps, gemini CLI 설치) 후 `scripts/idea-grill.sh` 호출.
+- **opt-in 게이트** (job-level `if:` 한 줄에 다 묶는다 — 코스트 0 으로 컷):
+  - 이슈 라벨에 `idea` 포함
+  - `github.event.comment.user.type != 'Bot'` 그리고 actor 가 `github-actions[bot]` 아님
+  - 코멘트 본문 첫 줄이 `/grill` 또는 `/grill <focus>` 패턴 정확히 매치 (정규식 `^/grill(\s+\S.*)?$`)
+- 추가 guard (job 안에서 한 번 더 검증, 보안 측면):
+  - actor 가 ALLOWED 화이트리스트 안 (`secrets.ALLOWED_GITHUB_LOGINS` 신설, 콤마구분 — 비어있으면 issue author 만 허용)
+- 단계: 기존 idea-elaborate.yml과 동일한 setup (Gemini OAuth 복원, Python deps, gemini CLI 설치) 후 `scripts/idea-grill.sh` 호출. 호출 직전 `gh issue comment <#> -b "👋 /grill 감지 — round N 시작합니다…"` 1줄 ack 코멘트로 사용자 피드백 제공.
 - 권한: `contents: read`, `issues: write` (본문/라벨/코멘트).
 
 ### 도메인 문서 통합 (CONTEXT.md, docs/adr/)
@@ -87,7 +89,7 @@ mattpocock/skills 의 `grill-me` / `grill-with-docs` / `to-prd` 는 (1) 의사�
 
 - JSON 새 필드(`grill_level`, `glossary_candidates`, `adr_candidates`, `next_grill_focus`)를 본문 머리/꼬리에 렌더링.
 - 이슈 본문 최상단에 `<!-- bbl-grill-meta: round=1 chat_id=… msg_id=… grill_level=… -->` HTML 코멘트 박아 followup 이 파싱하게 함.
-- "## Open Questions" 헤더 바로 위에 `> 🔥 Grilling round 1 — 이 질문들에 이슈 코멘트로 답하면 자동으로 다음 라운드가 돕니다. 라운드를 멈추려면 코멘트에 \`[skip-grill]\` 포함.` 안내.
+- "## Open Questions" 헤더 바로 위에 `> 🔥 Grilling round 1 — 이 질문들에 답한 뒤 **다음 라운드를 돌리려면** 새 코멘트의 첫 줄에 \`/grill\` 을 적어주세요. 특정 영역에 집중시키려면 \`/grill <focus>\` (예: \`/grill 성공 지표\`). 그냥 답변만 다는 코멘트는 무시됩니다.` 안내.
 - `needs_clarification == true` 일 때 라벨은 그대로 `needs-clarification` 유지(기존 동작과 호환).
 
 ## Critical files
@@ -112,27 +114,31 @@ mattpocock/skills 의 `grill-me` / `grill-with-docs` / `to-prd` 는 (1) 의사�
 |------|------|------|
 | 단위 | `IDEA_TEXT="텔레그램으로 잡 알람 받기"` 등 짧은 입력으로 `bash scripts/idea-elaborate.sh` 로컬 실행 | `grill_level: "deep"`, open_questions ≥ 5, glossary_candidates 1개 이상, needs-clarification 라벨 |
 | 단위 | URL이 포함되고 의도 명확한 입력으로 동일 실행 | `grill_level: "light"`, open_questions ≤ 3 |
-| 통합 | 실제 dispatch: `gh workflow run idea-elaborate.yml -f text="<vague>"` → 이슈 생성됨 확인 | grill-meta HTML 코멘트, Grilling round 1 배너, 글로사리/ADR 후보 섹션 모두 렌더 |
-| 통합 | 생성된 이슈에 owner 계정으로 답변 코멘트 작성 | followup 워크플로 1회 트리거 → round 2 details 추가, 본문 정식 섹션 in-place 갱신 |
-| 통합 | 동일 이슈에 `[skip-grill]` 포함 코멘트 작성 | followup 즉시 종료 (workflow run 은 success, no edits) |
-| 통합 | bot 계정 코멘트 또는 화이트리스트 밖 user 코멘트 | guard에서 skip |
+| 통합 | 실제 dispatch: `gh workflow run idea-elaborate.yml -f text="<vague>"` → 이슈 생성됨 확인 | grill-meta HTML 코멘트, Grilling round 1 배너(=`/grill` 사용 안내), 글로사리/ADR 후보 섹션 모두 렌더 |
+| 통합 | 생성된 이슈에 **`/grill` 없이** 일반 답변 코멘트 작성 | followup 워크플로 **트리거 안 됨** (workflow_runs 비어 있어야 정상) |
+| 통합 | owner 계정으로 첫 줄 `/grill` 포함 코멘트 작성 | followup 트리거 → ack 코멘트 → round 2 details 추가, 본문 정식 섹션 in-place 갱신 |
+| 통합 | `/grill 성공 지표` 처럼 focus 인자 포함 | round 2 의 `next_grill_focus` / 질문이 해당 영역에 편중 |
+| 통합 | bot 계정 또는 화이트리스트 밖 user 가 `/grill` 코멘트 | opt-in 패턴은 매치되어도 추가 guard 에서 skip (no edits) |
 | 통합 | grilling이 충분히 진행되어 `needs_clarification: false` 출력 | `needs-clarification` 제거, `grilled` 라벨 부여, ✅ 배너 추가 |
 | 회귀 | 기존 plan-link-back.yml 동작 (PR open/merge → 이슈 코멘트/라벨) | 변경 없이 그대로 작동 (`docs/plans/**` 경로 가드만 본다) |
-| 텔레그램 | `/idea <짧은 메모>` → 이슈 생성 회신 수신 → 이슈에 답글 작성 후 round 2 진행 시 텔레그램 회신 도착 | grill-meta의 chat_id 파싱이 정상 작동 |
+| 텔레그램 | `/idea <짧은 메모>` → 이슈 생성 회신 수신 → 이슈에 `/grill` 코멘트 후 round 2 진행 시 텔레그램 회신 도착 | grill-meta의 chat_id 파싱이 정상 작동 |
 
 ## Open questions
 
 - [ ] `ALLOWED_GITHUB_LOGINS` 시크릿을 새로 둘지, 아니면 기존 `ALLOWED_CHAT_IDS` 패턴처럼 vars로 둘지. (지금은 secret 가정.)
 - [ ] grilling 라운드 상한 (예: round 5 도달 시 자동 stop + "휴먼 개입 필요" 라벨) — v1 에서는 무제한, 그러나 라운드별 본문 길이 폭증 위험.
 - [ ] `glossary_candidates` 가 0건이고 이미 이슈 본문에 같은 용어가 있을 때 중복 누적 방지 (LLM에 기존 후보 리스트 주입 필요).
-- [ ] 비공개 ADR 후보(예: 외부 벤더명 포함)를 grilling 중 노출하지 말아야 하는지 — 현재 레포는 public이라 `[skip-grill]` 이외 마스킹 메커니즘 없음.
+- [ ] `/grill` 외에 `/grill-stop`(= `needs-clarification` 제거 + `grilled` 라벨로 수동 종결) 같은 보조 명령 필요할지 — `needs_clarification=false` 자연 도달이 안 되는 케이스 대비. v1 보류.
 
 ## Alternatives considered
 
+- **모든 코멘트 default-on + `[skip-grill]` opt-out**. initial draft 의 모델. 자연스러운 대화가 곧 grilling이 되어 마찰이 적지만, LLM 비용/노이즈가 폭주하고 사용자가 통제권을 잃음. PR #25 line 72 리뷰에서 명시적으로 거부됨 → opt-in 으로 전환.
+- **`[grill]` 토큰 어디서나**. opt-in 의 다른 형태. 첫 줄 슬래시보다 파싱이 너그럽지만 본문 인용·코드블록 안에 우연히 들어간 토큰이 의도치 않은 트리거를 일으킬 수 있어 비채택.
+- **이슈 reaction(🔥) 트리거**. 글자 안 넘기는 극단적 가벼움. 그러나 reaction event 는 별도 webhook 이고 답변 컨텍스트가 비어서(어떤 답변에 대한 grilling인지 모호) followup 프롬프트 설계가 복잡. v2 후보.
 - **Telegram 실시간 핑퐁** (worker가 KV/D1 세션 관리). UX는 더 매끄럽지만 worker가 처음으로 stateful 해지고 timeout/reset/concurrent session 처리 비용이 큼. AskUserQuestion 결과 비채택.
 - **프롬프트만 단발 강화** (아키텍처 무변경). 가장 작지만 grill-me 의 "지문 트리를 끝까지" 정신을 단발 호출로는 흉내내기 어렵고, 1차 답변 이후 후속 grilling이 불가능. 채택 안 함.
 - **CONTEXT.md / ADR 자동 PR 생성** (스크립트가 직접 branch + PR). grill-with-docs의 "inline 업데이트" 정신에는 더 가깝지만, 자동 commit이 main path에 처음 들어가는 변경이라 리스크가 크고 plan PR 의 책임 경계가 흐려짐. v2 별도 plan으로 분리.
-- **`/grill` 슬래시 명령어로 명시적 강도 조절**. 사용자가 한 번 더 외워야 하는 부담이 크고, 휴리스틱이 잘 작동하면 불필요. AskUserQuestion 결과 비채택.
+- **`/grill light|standard|deep` 인자로 명시적 강도 조절**. 사용자가 한 번 더 외워야 하는 부담. 휴리스틱이 잘 작동하면 불필요. 다만 `/grill <focus>` 의 focus 인자는 비슷한 효과를 좁게 제공 (영역 지정).
 
 ## Revisions
 
