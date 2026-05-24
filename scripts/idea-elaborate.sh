@@ -156,8 +156,15 @@ BODY="$(
     "## Non-goals\n" + (((.non_goals // []) | map("- " + .) | join("\n")) // "") + "\n\n" +
     "## 접근\n" + (.approach // "") + "\n\n" +
     "## 리스크\n" + (((.risks // []) | map("- " + .) | join("\n")) // "") + "\n\n" +
-    "> 🔥 Grilling round 1 (level: " + (.grill_level // "standard") + ") — 이 질문들에 답한 뒤 **다음 라운드를 돌리려면** 새 코멘트의 첫 줄에 `/grill` 을 적어주세요. 특정 영역에 집중시키려면 `/grill <focus>` (예: `/grill 성공 지표`). 그냥 답변만 다는 코멘트는 무시됩니다.\n" +
-    (if (.next_grill_focus // "") != "" then "> 다음 라운드 권장 focus: **" + .next_grill_focus + "**\n" else "" end) +
+    "> 🔥 **Grilling round 1** (level: " + (.grill_level // "standard") +
+    (if (.next_grill_focus // "") != "" then " · 다음 권장 focus: **" + .next_grill_focus + "**" else "" end) + ")\n" +
+    ">\n" +
+    "> **이슈 진행 방법:**\n" +
+    "> 1. 아래 **Open Questions** 중 답할 수 있는 것부터 자유 형식 코멘트로 답변. 한 코멘트에 여러 질문 답해도 OK.\n" +
+    "> 2. 답변이 끝나면 **새 코멘트 첫 줄**에 `/grill` 입력 → 다음 grilling 라운드 자동 트리거.\n" +
+    ">    - 특정 영역만 집중하려면 `/grill <focus>` (예: `/grill 성공 지표`).\n" +
+    "> 3. `/grill` 없는 일반 코멘트는 워크플로가 무시합니다 (비용 0).\n" +
+    "> 4. 라운드는 무한 반복 가능. `needs_clarification` 이 false 가 되면 `grilled` 라벨이 붙고 ✅ 완료 배너가 추가됩니다. 그 시점 또는 그 전이라도 plan PR 작성으로 넘어가도 됩니다.\n" +
     "\n" +
     "## Open Questions\n" + (((.open_questions // []) | map("- [ ] " + .) | join("\n")) // "") + "\n\n" +
     "## Next Actions\n" + (

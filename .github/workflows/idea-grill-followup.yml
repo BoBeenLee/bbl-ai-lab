@@ -118,9 +118,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           gh issue comment "$ISSUE_NUMBER" \
-            --body "👋 /grill 감지 — 다음 grilling 라운드를 시작합니다…" \
+            --body "👋 \`/grill\` 감지 — 직전 \`/grill\` 이후의 답변 코멘트들을 모아 다음 라운드를 분석 중입니다. ([워크플로 실행]($RUN_URL))" \
             >/dev/null
 
       - name: Run grill followup

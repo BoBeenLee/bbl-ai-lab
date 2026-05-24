@@ -230,7 +230,7 @@ TMP_BODY="$(mktemp)"
 printf '%s' "$ISSUE_BODY" > "$TMP_BODY"
 
 NEW_BODY="$(python3 "${ROOT_DIR}/scripts/_idea_grill_body.py" \
-  "$TMP_BODY" "$TMP_JSON" "$NEXT_ROUND" "$GRILL_LEVEL" "$CHAT_ID" "$MSG_ID")"
+  "$TMP_BODY" "$TMP_JSON" "$NEXT_ROUND" "$GRILL_LEVEL" "$CHAT_ID" "$MSG_ID" "$MANUAL_FOCUS")"
 
 if [[ -z "$NEW_BODY" ]]; then
   echo "ERROR: body manipulation produced empty output" >&2
@@ -251,11 +251,24 @@ if [[ "$NEEDS_CLARIFY" == "false" ]]; then
   gh issue edit "$ISSUE_NUMBER" --repo "$REPO_PATH" --add-label grilled >/dev/null 2>&1 || true
 fi
 
-# Round 진행 알림 코멘트 (텔레그램 fallback)
-ROUND_COMMENT="🔥 Grilling round ${NEXT_ROUND} 완료 — needs_clarification: ${NEEDS_CLARIFY}"
-if [[ -n "$ROUND_SUMMARY" ]]; then
-  ROUND_COMMENT="$ROUND_COMMENT"$'\n\n'"$ROUND_SUMMARY"
+# 남은 Open Questions 수 (remaining + new)
+OPEN_Q_LEFT="$(jq -r '((.remaining_questions // []) + (.new_questions // [])) | length' "$TMP_JSON")"
+
+# Round 진행 알림 코멘트 — 다음 단계 안내 포함
+if [[ "$NEEDS_CLARIFY" == "false" ]]; then
+  ROUND_COMMENT="✅ Grilling round ${NEXT_ROUND} 완료 — 모든 핵심 질문이 정리되었습니다."
+  if [[ -n "$ROUND_SUMMARY" ]]; then
+    ROUND_COMMENT="$ROUND_COMMENT"$'\n\n'"$ROUND_SUMMARY"
+  fi
+  ROUND_COMMENT="$ROUND_COMMENT"$'\n\n'"**다음 단계:**"$'\n'"- 이슈 본문의 **글로사리 후보** → \`CONTEXT.md\`, **ADR 후보** → \`docs/adr/000N-*.md\` 로 옮기는 plan PR 을 작성하세요."$'\n'"- plan PR 작성 가이드: [docs/plans/README.md](https://github.com/${REPO_PATH}/blob/main/docs/plans/README.md)"$'\n'"- 더 grilling 이 필요하다고 판단되면 언제든 새 코멘트 첫 줄에 \`/grill\` 으로 라운드 재개 가능."
+else
+  ROUND_COMMENT="🔥 Grilling round ${NEXT_ROUND} 완료 — 남은 Open Questions: **${OPEN_Q_LEFT}개**"
+  if [[ -n "$ROUND_SUMMARY" ]]; then
+    ROUND_COMMENT="$ROUND_COMMENT"$'\n\n'"$ROUND_SUMMARY"
+  fi
+  ROUND_COMMENT="$ROUND_COMMENT"$'\n\n'"**다음 단계:**"$'\n'"1. 위 이슈 본문의 갱신된 **## Open Questions** 를 확인하세요."$'\n'"2. 답할 수 있는 질문에 자유 형식 코멘트로 답변하세요 (질문 인용 / 한 코멘트에 여러 질문 답변 모두 OK)."$'\n'"3. 답변이 끝나면 **새 코멘트 첫 줄**에 \`/grill\` (특정 영역 집중은 \`/grill <focus>\`) → round $((NEXT_ROUND + 1)) 자동 시작."$'\n'"4. 충분하다 판단되면 \`/grill\` 없이 plan PR 작성으로 바로 넘어가도 됩니다."
 fi
+
 gh issue comment "$ISSUE_NUMBER" --repo "$REPO_PATH" --body "$ROUND_COMMENT" >/dev/null
 
 # Telegram 회신 (옵션)

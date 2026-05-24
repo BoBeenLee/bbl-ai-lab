@@ -3,7 +3,8 @@
 이슈 본문 in-place 갱신 헬퍼. idea-grill.sh 가 호출.
 
 사용:
-    python3 scripts/_idea_grill_body.py BODY_PATH JSON_PATH NEXT_ROUND GRILL_LEVEL CHAT_ID MSG_ID
+    python3 scripts/_idea_grill_body.py \
+        BODY_PATH JSON_PATH NEXT_ROUND GRILL_LEVEL CHAT_ID MSG_ID [MANUAL_FOCUS]
 
 STDOUT 에 갱신된 마크다운 본문을 출력한다.
 입력:
@@ -13,6 +14,7 @@ STDOUT 에 갱신된 마크다운 본문을 출력한다.
     GRILL_LEVEL  현재 grill_level (보존)
     CHAT_ID      Telegram chat id (grill-meta 보존)
     MSG_ID       Telegram message id (grill-meta 보존)
+    MANUAL_FOCUS (옵션) /grill <focus> 인자. 배너 focus 갱신에 사용.
 """
 import json
 import re
@@ -50,8 +52,28 @@ def append_to_section(body: str, header: str, new_lines: list) -> str:
     return pat.sub(lambda mm: mm.group(1) + new_section, body, count=1)
 
 
+def make_banner(round_num: int, grill_level: str, focus: str) -> str:
+    """idea-elaborate.sh 의 초기 배너와 동일한 포맷. 매 라운드마다 갱신된다."""
+    focus_suffix = f" · 다음 권장 focus: **{focus}**" if focus else ""
+    return (
+        f"> 🔥 **Grilling round {round_num}** (level: {grill_level}{focus_suffix})\n"
+        ">\n"
+        "> **이슈 진행 방법:**\n"
+        "> 1. 아래 **Open Questions** 중 답할 수 있는 것부터 자유 형식 코멘트로 답변. 한 코멘트에 여러 질문 답해도 OK.\n"
+        "> 2. 답변이 끝나면 **새 코멘트 첫 줄**에 `/grill` 입력 → 다음 grilling 라운드 자동 트리거.\n"
+        ">    - 특정 영역만 집중하려면 `/grill <focus>` (예: `/grill 성공 지표`).\n"
+        "> 3. `/grill` 없는 일반 코멘트는 워크플로가 무시합니다 (비용 0).\n"
+        "> 4. 라운드는 무한 반복 가능. `needs_clarification` 이 false 가 되면 `grilled` 라벨이 붙고 ✅ 완료 배너가 추가됩니다. 그 시점 또는 그 전이라도 plan PR 작성으로 넘어가도 됩니다.\n"
+    )
+
+
 def main():
-    body_path, json_path, next_round_s, grill_level, chat_id, msg_id = sys.argv[1:7]
+    args = sys.argv[1:]
+    if len(args) < 6:
+        print("usage: _idea_grill_body.py BODY JSON ROUND LEVEL CHAT MSG [FOCUS]", file=sys.stderr)
+        sys.exit(2)
+    body_path, json_path, next_round_s, grill_level, chat_id, msg_id = args[:6]
+    manual_focus = args[6].strip() if len(args) >= 7 else ""
     body = open(body_path, "r", encoding="utf-8").read()
     data = json.load(open(json_path, "r", encoding="utf-8"))
     next_round = int(next_round_s)
@@ -96,6 +118,26 @@ def main():
             else:
                 content = "_없음_\n"
             body = replace_section(body, header, content)
+
+    # 2.5) 배너 교체: 매 라운드마다 round / focus 를 최신으로 갱신
+    #     manual_focus(이번 /grill <focus>) > LLM 의 round_summary 에 명시된 focus > 빈 문자열 순으로 우선.
+    focus = manual_focus or ""
+    new_banner = make_banner(next_round, grill_level, focus)
+    banner_pat = re.compile(
+        r"^>\s*🔥\s*\*\*Grilling round\b[^\n]*(?:\n>[^\n]*)*\n?",
+        re.MULTILINE,
+    )
+    if banner_pat.search(body):
+        body = banner_pat.sub(lambda m: new_banner, body, count=1)
+    else:
+        # 배너가 사라진 경우 (수동 편집 등) → Open Questions 헤더 직전에 삽입
+        body = re.sub(
+            r"(^##\s*Open Questions\b)",
+            new_banner + r"\n\1",
+            body,
+            count=1,
+            flags=re.MULTILINE,
+        )
 
     # 3) Open Questions = remaining + new
     remaining = data.get("remaining_questions") or []
