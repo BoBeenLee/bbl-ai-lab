@@ -1,0 +1,84 @@
+name: Recruit Analyze
+
+on:
+  # 매주 월 09:00 KST (= 월 00:00 UTC)
+  schedule:
+    - cron: '0 0 * * 1'
+
+  # Cloudflare Worker(텔레그램 /recruit report) 트리거
+  repository_dispatch:
+    types: [recruit-analyze]
+
+  # 수동 / E2E 검증용
+  workflow_dispatch:
+    inputs:
+      since:
+        description: "분석 시작일 YYYY-MM-DD (비우면 until-6일)"
+        required: false
+        type: string
+      until:
+        description: "분석 종료일 YYYY-MM-DD (비우면 KST 오늘)"
+        required: false
+        type: string
+
+# 리포트 Issue 생성(issues) + WoW 스냅샷 commit(contents)
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: recruit-analyze
+  cancel-in-progress: false
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # aggregate.py 는 stdlib only — pip 설치 불필요.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Restore Gemini OAuth credentials
+        env:
+          GEMINI_OAUTH_CREDS: ${{ secrets.GEMINI_OAUTH_CREDS }}
+          GEMINI_GOOGLE_EMAIL: ${{ secrets.GEMINI_GOOGLE_EMAIL }}
+        run: |
+          if [ -z "$GEMINI_OAUTH_CREDS" ] || [ -z "$GEMINI_GOOGLE_EMAIL" ]; then
+            echo "ERROR: GEMINI_OAUTH_CREDS / GEMINI_GOOGLE_EMAIL secrets are required" >&2
+            exit 1
+          fi
+          mkdir -p ~/.gemini
+          printf '%s' "$GEMINI_OAUTH_CREDS" | base64 -d > ~/.gemini/oauth_creds.json
+          chmod 600 ~/.gemini/oauth_creds.json
+          cat > ~/.gemini/settings.json <<'JSON'
+          {
+            "security": {
+              "auth": {
+                "selectedType": "oauth-personal"
+              }
+            }
+          }
+          JSON
+          jq -n --arg email "$GEMINI_GOOGLE_EMAIL" '{ active: $email, old: [] }' \
+            > ~/.gemini/google_accounts.json
+
+      - name: Install Gemini CLI
+        run: npm install -g @google/gemini-cli@0.41.1
+
+      - name: Run analyzer
+        env:
+          GEMINI_CLI_TRUST_WORKSPACE: 'true'
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-3-pro-preview' }}
+          GEMINI_EXTRACT_MODEL: ${{ vars.GEMINI_EXTRACT_MODEL || 'gemini-2.5-flash' }}
+          SINCE: ${{ github.event.client_payload.since || github.event.inputs.since }}
+          UNTIL: ${{ github.event.client_payload.until || github.event.inputs.until }}
+        run: bash scripts/recruit-analyze.sh
