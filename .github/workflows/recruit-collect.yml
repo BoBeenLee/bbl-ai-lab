@@ -1,0 +1,54 @@
+name: Recruit Collect
+
+on:
+  # 매일 03:00 KST (= 18:00 UTC 전일)
+  schedule:
+    - cron: '0 18 * * *'
+
+  # Cloudflare Worker(텔레그램 /recruit collect) 트리거
+  repository_dispatch:
+    types: [recruit-collect]
+
+  # 수동 / E2E 검증용
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: "콤마 구분 (remoteok,hn-hiring,wanted,jumpit)"
+        required: false
+        default: "remoteok,hn-hiring,wanted,jumpit"
+        type: string
+      max:
+        description: "플랫폼당 최대 레코드 수"
+        required: false
+        default: "200"
+        type: string
+
+# 데이터를 레포에 commit 하므로 write 권한 필요 (기존 flow 와 다른 신규 패턴)
+permissions:
+  contents: write
+
+concurrency:
+  group: recruit-collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # fetcher 는 Python stdlib(urllib)만 사용 — 추가 의존성 설치 불필요.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run collector
+        env:
+          PLATFORMS: ${{ github.event.client_payload.platforms || github.event.inputs.platforms || 'remoteok,hn-hiring,wanted,jumpit' }}
+          MAX: ${{ github.event.client_payload.max || github.event.inputs.max || '200' }}
+        run: bash scripts/recruit-collect.sh
+
+      - name: Dump fetcher diagnostics
+        if: always()
+        run: cat /tmp/recruit-collect.log 2>/dev/null || echo "(no fetcher log)"
