@@ -195,6 +195,14 @@ if ! gemini_call "$REPORT_MODEL" "$RPF" "$ROF" || [[ ! -s "$ROF" ]]; then
   } > "$ROF"
 fi
 
+# 산출물 보존 (선택) — ARTIFACT_DIR 지정 시 중간 결과 복사 (CI 아티팩트/디버깅용)
+if [[ -n "${ARTIFACT_DIR:-}" ]]; then
+  mkdir -p "$ARTIFACT_DIR"
+  cp -f "$RUN_DIR/deduped.jsonl" "$RUN_DIR/extracted.jsonl" "$RUN_DIR/aggregate.json" "$ARTIFACT_DIR/" 2>/dev/null || true
+  [[ -s "$ROF" ]] && cp -f "$ROF" "$ARTIFACT_DIR/report.md"
+  echo "[analyze] artifacts -> $ARTIFACT_DIR" >&2
+fi
+
 # ---------- G. 이슈 (스크립트 소유 메트릭 푸터) ----------
 MODEL_USED="flash→pro"
 if [[ "$USED_FLASH" == "1" && "$USED_PRO" == "0" ]]; then MODEL_USED="flash"
