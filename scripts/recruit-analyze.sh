@@ -56,15 +56,18 @@ EXTRACT_MODELS=("$EXTRACT_MODEL")
 [[ "$REPORT_MODEL" != "$EXTRACT_MODEL" ]] && EXTRACT_MODELS+=("$REPORT_MODEL")
 
 # 단일 gemini 호출 + 모델별 재시도. 성공 시 0.
+# stderr 는 로그 파일로 분리한다 (gemini CLI 가 배너/진단을 stderr 로 찍는데,
+# 이를 stdout 캡처($of)에 섞으면 리포트 본문이 오염되기 때문).
 gemini_call() {  # $1=model $2=prompt_file $3=out_file
   local model="$1" pf="$2" of="$3" attempt=0 max=$(( RETRIES + 1 ))
   while (( attempt < max )); do
     attempt=$(( attempt + 1 ))
     LLM_CALLS=$(( LLM_CALLS + 1 ))
-    if gemini --yolo -m "$model" -p "$(cat "$pf")" > "$of" 2> >(tee /dev/stderr); then
+    if gemini --yolo -m "$model" -p "$(cat "$pf")" > "$of" 2>"$RUN_DIR/gemini_err.log"; then
       return 0
     fi
-    echo "[analyze] gemini($model) attempt $attempt/$max failed" >&2
+    echo "[analyze] gemini($model) attempt $attempt/$max failed:" >&2
+    tail -n 5 "$RUN_DIR/gemini_err.log" >&2
     (( attempt < max )) && sleep 5
   done
   return 1
