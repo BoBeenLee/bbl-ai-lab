@@ -1,0 +1,6 @@
+{
+  "_comment": "ATS 공개 job board 회사 슬러그 시드. 사람이 큐레이션/확장한다. 없는 슬러그는 fetcher 가 graceful skip. greenhouse=boards-api.greenhouse.io/v1/boards/<slug>, ashby=api.ashbyhq.com/posting-api/job-board/<slug>, lever=api.lever.co/v0/postings/<slug>.",
+  "greenhouse": ["stripe", "airbnb", "dropbox", "brex", "gitlab"],
+  "ashby": ["openai", "notion", "ramp", "linear"],
+  "lever": ["mistral"]
+}

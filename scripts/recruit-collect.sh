@@ -19,18 +19,22 @@ set -uo pipefail  # -e 미사용: 단일 플랫폼 실패가 전체를 죽이지
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FETCH_DIR="${ROOT_DIR}/scripts/recruit/fetchers"
 
-PLATFORMS="${PLATFORMS:-remoteok,hn-hiring,wanted,jumpit}"
+PLATFORMS="${PLATFORMS:-remoteok,hn-hiring,wanted,jumpit,jobkorea,greenhouse,ashby,lever}"
 MAX="${MAX:-200}"
 DATE="${COLLECT_DATE:-$(TZ=Asia/Seoul date +%F)}"
 
 # platform slug -> "fetcher_file region"
 platform_spec() {
   case "$1" in
-    remoteok)  echo "remoteok.py GLOBAL" ;;
-    hn-hiring) echo "hn_hiring.py GLOBAL" ;;
-    wanted)    echo "wanted.py KR" ;;
-    jumpit)    echo "jumpit.py KR" ;;
-    *)         echo "" ;;
+    remoteok)   echo "remoteok.py GLOBAL" ;;
+    hn-hiring)  echo "hn_hiring.py GLOBAL" ;;
+    wanted)     echo "wanted.py KR" ;;
+    jumpit)     echo "jumpit.py KR" ;;
+    jobkorea)   echo "jobkorea.py KR" ;;
+    greenhouse) echo "greenhouse.py GLOBAL" ;;
+    ashby)      echo "ashby.py GLOBAL" ;;
+    lever)      echo "lever.py GLOBAL" ;;
+    *)          echo "" ;;
   esac
 }
 

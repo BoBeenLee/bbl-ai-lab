@@ -13,9 +13,9 @@ on:
   workflow_dispatch:
     inputs:
       platforms:
-        description: "콤마 구분 (remoteok,hn-hiring,wanted,jumpit)"
+        description: "콤마 구분 (remoteok,hn-hiring,wanted,jumpit,jobkorea,greenhouse,ashby,lever)"
         required: false
-        default: "remoteok,hn-hiring,wanted,jumpit"
+        default: "remoteok,hn-hiring,wanted,jumpit,jobkorea,greenhouse,ashby,lever"
         type: string
       max:
         description: "플랫폼당 최대 레코드 수"
@@ -45,7 +45,7 @@ jobs:
 
       - name: Run collector
         env:
-          PLATFORMS: ${{ github.event.client_payload.platforms || github.event.inputs.platforms || 'remoteok,hn-hiring,wanted,jumpit' }}
+          PLATFORMS: ${{ github.event.client_payload.platforms || github.event.inputs.platforms || 'remoteok,hn-hiring,wanted,jumpit,jobkorea,greenhouse,ashby,lever' }}
           MAX: ${{ github.event.client_payload.max || github.event.inputs.max || '200' }}
         run: bash scripts/recruit-collect.sh
 

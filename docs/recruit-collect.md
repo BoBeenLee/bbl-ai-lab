@@ -20,14 +20,23 @@
 | `hn-hiring` | GLOBAL | HN Firebase API: whoishiring → 최신 "Who is hiring" → kids 댓글 | 자유텍스트 (analyze 추출) |
 | `wanted` | KR | 상세 페이지 `application/ld+json` JobPosting | 자유텍스트 (analyze 추출) |
 | `jumpit` | KR | saramin 내부 API (`jumpit-api.saramin.co.kr`) — **JSON-LD 아님(CSR)** | `techStacks` → `skills_raw` |
+| `jobkorea` | KR | `/recruit/joblist` HTML → 상세 `GI_Read` JSON-LD JobPosting (원티드 패턴) | 자유텍스트 (요약, analyze 추출) |
+| `greenhouse` | GLOBAL | 공개 ATS API `boards-api.greenhouse.io/v1/boards/<co>/jobs?content=true` | 자유텍스트 (analyze 추출) |
+| `ashby` | GLOBAL | 공개 ATS API `api.ashbyhq.com/posting-api/job-board/<co>` | 자유텍스트 (analyze 추출) |
+| `lever` | GLOBAL | 공개 ATS API `api.lever.co/v0/postings/<co>?mode=json` | 자유텍스트 (analyze 추출) |
 
-> **원티드 주의:** CloudFront 뒤에 있어 데이터센터 IP(GitHub Actions)가 WAF 에 차단될 수 있다. fetcher 는 403/빈응답 시 해당 플랫폼만 graceful skip(exit 0)하고 나머지로 진행한다.
+> **ATS(greenhouse/ashby/lever):** 무인증 공개 API. "회사별 조회" 모델이라 회사 슬러그 목록을 `scripts/recruit/ats_companies.json` 에서 큐레이션/확장한다. 없는 슬러그/빈 응답은 graceful skip. 한 회사가 데이터를 독식하지 않도록 fetcher 에 `--per-company` 캡(기본 40). 부서(department) 가 다양해 기획/디자인 직군 커버리지도 보완한다.
+>
+> **원티드 주의:** CloudFront 뒤에 있어 데이터센터 IP(GitHub Actions)가 WAF 에 차단될 수 있다. fetcher 는 403/빈응답 시 해당 플랫폼만 graceful skip(exit 0)하고 나머지로 진행한다 (jobkorea 도 동일 graceful skip).
+>
+> **잡코리아 주의:** 본문은 CSR 렌더라 JSON-LD `description` 은 짧은 SEO 요약이다(스킬 신호 약함, 메타데이터/직군 위주). AI/LLM 크롤러 UA 는 robots 차단 대상이나 fetcher 는 일반 UA + LLM 미사용.
 
 ## 적재 경로
 
 ```
 data/recruit/<YYYY-MM-DD(KST)>/<region>/<platform>.jsonl
-                                 │         └─ remoteok | hn-hiring | wanted | jumpit
+                                 │         └─ remoteok | hn-hiring | greenhouse | ashby | lever (GLOBAL)
+                                 │            wanted | jumpit | jobkorea (KR)
                                  └─ GLOBAL | KR
 ```
 
@@ -57,7 +66,8 @@ data/recruit/<YYYY-MM-DD(KST)>/<region>/<platform>.jsonl
 |------|------|
 | `.github/workflows/recruit-collect.yml` | cron + dispatch, `permissions: contents: write`, collector 실행 |
 | `scripts/recruit-collect.sh` | 플랫폼별 fetcher 실행 → JSONL 적재 → git commit/push |
-| `scripts/recruit/fetchers/{remoteok,hn_hiring,wanted,jumpit}.py` | 플랫폼별 fetcher (stdlib only) |
+| `scripts/recruit/fetchers/{remoteok,hn_hiring,wanted,jumpit,jobkorea,greenhouse,ashby,lever}.py` | 플랫폼별 fetcher (stdlib only) |
+| `scripts/recruit/ats.py`, `ats_companies.json` | ATS 공통 모듈 + 회사 슬러그 시드 |
 | `scripts/recruit/normalize.py` | http/정규화/JSONL 공통 유틸 |
 
 ## 로컬 실행
@@ -81,6 +91,10 @@ NO_COMMIT=1 MAX=20 bash scripts/recruit-collect.sh
 | hn-hiring | OK (최신 스레드 ~378댓글) | title/desc/url/posted 100% (company/skills 는 analyze) |
 | wanted | OK (JSON-LD) | title/company/location/desc/url/posted 100% |
 | jumpit | OK (saramin API) | 전 필드 100% (skills_raw 포함) |
+| jobkorea | OK (joblist 63건/페이지 → JSON-LD) | title/company/location/desc/url/posted 100% (desc 는 요약) |
+| greenhouse | OK (stripe/airbnb 등) | title/company/location/desc/url/posted 100% |
+| ashby | OK (openai/notion 등) | 전 필드 100% (employment_type 포함) |
+| lever | OK (mistral) | title/company/location/desc/url/posted 100% |
 
 ## 후속 (이번 라운드 미포함)
 
