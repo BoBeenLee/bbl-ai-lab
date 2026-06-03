@@ -8,7 +8,7 @@
 |-----------|------|--------|
 | `/idea <본문>` | `/idea 회의록 요약 봇 만들어보기` | idea flow |
 | `/todo <본문>` | `/todo 분기별 KPI 정리` | idea flow (동의어) |
-| 명령어 없는 평문 | `회의록 요약 봇 만들어보기` | default flow = idea |
+| 명령어 없는 평문 | `회의록 요약 봇 만들어보기` | dispatch 하지 않고 `/idea <본문>` 안내 회신 |
 | 등록되지 않은 명령어 | `/foo ...` | 도움말 회신 |
 
 repository_dispatch event_type: **`idea-submitted`**.
@@ -129,7 +129,7 @@ gh variable delete GEMINI_MODEL --repo BoBeenLee/bbl-ai-lab
 |------|------|-----------|
 | Action 단독 | GitHub Actions UI → Idea Elaborate → Run workflow → text 입력 | Issue 생성 |
 | Action CLI | `gh workflow run idea-elaborate.yml --repo BoBeenLee/bbl-ai-lab -f text="테스트"` | 동일 |
-| 명령어 라우팅 | `/idea ...`, `/todo ...`, 평문 모두 idea flow / `/unknown ...`은 도움말 | Worker 로그(`wrangler tail`)로 확인 |
+| 명령어 라우팅 | `/idea ...`, `/todo ...`만 idea flow / 평문과 `/unknown ...`은 도움말 | Worker 로그(`wrangler tail`)로 확인 |
 | Telegram E2E | 봇에 `/idea 첫 테스트` 전송 | 즉시 ack → 1~2분 내 Issue 링크 회신 |
 | 출력 스키마 위반 | gemini가 JSON 외 텍스트만 반환한 경우 | 스크립트가 stderr에 raw output 출력 후 exit 1 (Action fail) |
 

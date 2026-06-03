@@ -10,7 +10,7 @@
 //
 // 매칭 규칙:
 //   - 메시지가 "/<command> ..." 로 시작하면 해당 flow로 라우팅 (잘라낸 본문만 dispatch)
-//   - 명령어가 없는 평문은 DEFAULT_FLOW 로 폴백 (현재 idea)
+//   - 명령어가 없는 평문은 dispatch 하지 않고 prefix 사용 안내만 회신
 //   - 등록되지 않은 명령어는 도움말 회신
 
 interface Env {
@@ -50,8 +50,6 @@ const FLOWS: FlowDef[] = [
   //   ackText: "회의록 요약 시작. 잠시 후 결과를 회신합니다.",
   // },
 ];
-
-const DEFAULT_FLOW = FLOWS.find((f) => f.commands.includes("idea"))!;
 
 const COMMAND_INDEX: Record<string, FlowDef> = Object.fromEntries(
   FLOWS.flatMap((f) => f.commands.map((c) => [c.toLowerCase(), f] as const)),
@@ -133,6 +131,16 @@ export default {
       return new Response("ok", { status: 200 });
     }
 
+    if (routed.kind === "missing_prefix") {
+      await sendTelegramReply(
+        env,
+        chatId,
+        msg.message_id,
+        renderHelp("명령어 prefix가 필요합니다. /idea 또는 /todo 로 시작해 주세요."),
+      );
+      return new Response("ok", { status: 200 });
+    }
+
     if (!routed.body) {
       await sendTelegramReply(env, chatId, msg.message_id, routed.flow.usageHint);
       return new Response("ok", { status: 200 });
@@ -166,13 +174,13 @@ export default {
 
 type RouteResult =
   | { kind: "matched"; flow: FlowDef; body: string }
-  | { kind: "unknown_command"; command: string };
+  | { kind: "unknown_command"; command: string }
+  | { kind: "missing_prefix" };
 
 function routeCommand(text: string): RouteResult {
   const m = text.match(/^\/(\w+)(?:@[\w_]+)?(?:\s+([\s\S]*))?$/);
   if (!m) {
-    // 명령어 없는 평문은 default flow
-    return { kind: "matched", flow: DEFAULT_FLOW, body: text };
+    return { kind: "missing_prefix" };
   }
   const cmd = m[1].toLowerCase();
   const body = (m[2] ?? "").trim();
