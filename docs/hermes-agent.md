@@ -17,8 +17,9 @@
 - `scripts/hermes/install.sh`로 공식 path 설치 완료.
 - `scripts/hermes/doctor.sh`에서 `~/.hermes/hermes-agent`, `~/.local/bin/hermes`, managed `uv`, managed Node/npm 확인 완료.
 - 모델 기본값은 `model.provider=openrouter`, `model.default=openrouter/free`로 설정했다.
+- `OPENROUTER_API_KEY`는 Hermes MacBook의 `~/.hermes/.env`에 구성했고, `hermes --provider openrouter --model openrouter/free -z ...` smoke test가 통과했다.
 - gateway는 user-level launchd로 설치·시작했다. `hermes gateway status`에서 `ai.hermes.gateway`가 loaded 상태로 확인된다.
-- 남은 필수 조치는 `OPENROUTER_API_KEY`를 `~/.hermes/.env`에 구성하는 것이다.
+- Telegram/Discord 같은 messaging provider는 아직 구성하지 않았다.
 
 기본 접속:
 
@@ -90,12 +91,20 @@ ssh -i ~/.ssh/id_ed25519_bobeenlee_nopass -o IdentitiesOnly=yes bobeenlee@192.16
 
 ## Setup
 
-모델 provider는 OpenRouter로 설정했고, 초기 모델은 OpenRouter의 무료 라우터인 `openrouter/free`로 둔다. API key, Nous Portal OAuth, Telegram/Discord 같은 messaging provider 설정은 자동화하지 않는다. 필요한 secret과 OAuth 입력은 Hermes MacBook에서 사람이 직접 수행한다.
+모델 provider는 OpenRouter로 설정했고, 초기 모델은 OpenRouter의 무료 라우터인 `openrouter/free`로 둔다. OpenRouter API key는 Hermes MacBook의 `~/.hermes/.env`에만 저장한다. Nous Portal OAuth, Telegram/Discord 같은 messaging provider 설정은 자동화하지 않는다. 필요한 secret과 OAuth 입력은 Hermes MacBook에서 사람이 직접 수행한다.
 
 ```bash
 ~/.local/bin/hermes config set OPENROUTER_API_KEY sk-or-...
 ~/.local/bin/hermes doctor
 ```
+
+smoke test:
+
+```bash
+~/.local/bin/hermes --provider openrouter --model openrouter/free -z "Reply with exactly: OK"
+```
+
+검증 결과: `OK`
 
 대화형으로 다시 설정하려면:
 

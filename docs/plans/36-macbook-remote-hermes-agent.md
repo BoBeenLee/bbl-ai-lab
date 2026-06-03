@@ -26,7 +26,7 @@ revisions:
 - SSH 접속 확인: `ssh -i ~/.ssh/id_ed25519_bobeenlee_nopass -o IdentitiesOnly=yes bobeenlee@192.168.0.8`
 - 원격 확인 결과: `whoami=bobeenlee`, `hostname=BoBeenui-MacBookPro.local`, `pwd=/Users/bobeenlee`, `sw_vers -productVersion=26.2`
 - 디버그 결과: 최초 등록한 passphrase 있는 key는 서버가 public key를 인정했지만, Codex 비대화형 SSH 세션에서 private key passphrase를 풀 수 없어 인증이 최종 실패했다. 따라서 Codex 자동화 전용 no-pass key를 별도로 발급해 Hermes MacBook의 `authorized_keys`에 추가했다.
-- 구현 결과: `scripts/hermes/install.sh`로 Hermes agent를 공식 path에 설치했고, `scripts/hermes/doctor.sh` 기준 `~/.hermes/hermes-agent`, `~/.local/bin/hermes`, managed `uv`, managed Node/npm이 확인된다. 모델 기본값은 OpenRouter `openrouter/free`로 설정했고, user-level launchd gateway는 loaded 상태다. 남은 필수 조치는 `OPENROUTER_API_KEY`를 `~/.hermes/.env`에 구성하는 것이다.
+- 구현 결과: `scripts/hermes/install.sh`로 Hermes agent를 공식 path에 설치했고, `scripts/hermes/doctor.sh` 기준 `~/.hermes/hermes-agent`, `~/.local/bin/hermes`, managed `uv`, managed Node/npm이 확인된다. 모델 기본값은 OpenRouter `openrouter/free`로 설정했고, `OPENROUTER_API_KEY` 구성 후 smoke test가 통과했다. user-level launchd gateway는 loaded 상태다.
 
 ## Approach
 
@@ -43,7 +43,7 @@ revisions:
 
 4. **운영화는 CLI-first launchd gateway까지 활성화한다.** 단기 검증은 `hermes doctor`와 foreground 명령으로 수행한다. 상시 실행은 Hermes 공식 `hermes gateway install/start/status` 명령으로 user-level `launchd` agent를 등록한다. Telegram/Discord 같은 messaging provider setup은 별도 후속 단계로 둔다.
 
-5. **완료 기준은 "설치됨"이 아니라 "원격에서 재현 가능하게 진단됨"으로 둔다.** 이번 범위에서는 SSH 접속, 공식 설치 경로 확인, `hermes doctor`, OpenRouter/free model config, gateway status/log 확인까지 통과해야 한다. OpenRouter API key 입력은 secret이므로 사람이 직접 수행한다.
+5. **완료 기준은 "설치됨"이 아니라 "원격에서 재현 가능하게 진단됨"으로 둔다.** 이번 범위에서는 SSH 접속, 공식 설치 경로 확인, `hermes doctor`, OpenRouter/free model config, OpenRouter smoke test, gateway status/log 확인까지 통과해야 한다. OpenRouter API key는 secret이므로 Hermes MacBook의 `~/.hermes/.env`에만 저장한다.
 
 ## Critical files
 
@@ -69,6 +69,7 @@ revisions:
 | agent foreground | Hermes MacBook에서 `~/.local/bin/hermes doctor` 실행 | command exits 0 또는 setup 필요 상태를 명확히 출력 |
 | 로그 확인 | `scripts/hermes/doctor.sh` 또는 문서화된 log command 실행 | gateway log 존재 여부와 최근 상태 확인 |
 | OpenRouter/free 설정 | `hermes config show` | `model.provider=openrouter`, `model.default=openrouter/free` 확인 |
+| OpenRouter smoke test | `hermes --provider openrouter --model openrouter/free -z ...` | `OK` 응답 |
 | launchd 등록 | `hermes gateway install/start/status` | `ai.hermes.gateway` service loaded |
 
 실행 검증 결과:
@@ -76,8 +77,9 @@ revisions:
 - `scripts/hermes/install.sh`: 공식 installer 완료, `~/.local/bin/hermes doctor` 실행
 - `scripts/hermes/doctor.sh`: SSH, key fingerprint, official paths, managed runtime paths, `hermes doctor`, `hermes gateway status` 확인
 - OpenRouter/free model config: `model.provider=openrouter`, `model.default=openrouter/free` 확인
+- OpenRouter smoke test: `OK` 응답 확인
 - gateway 상태: user-level launchd `ai.hermes.gateway` loaded
-- 남은 blocker: OpenRouter API key 미입력
+- 남은 blocker: 구현 PR merge 및 최종 shipped revision
 
 ## Open questions
 
