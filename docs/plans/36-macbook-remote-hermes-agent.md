@@ -24,10 +24,16 @@ revisions:
 - 현재 접속 IP: `192.168.0.8`
 - SSH 접속 확인: `ssh -i ~/.ssh/id_ed25519_bobeenlee_nopass -o IdentitiesOnly=yes bobeenlee@192.168.0.8`
 - 원격 확인 결과: `whoami=bobeenlee`, `hostname=BoBeenui-MacBookPro.local`, `pwd=/Users/bobeenlee`, `sw_vers -productVersion=26.2`
+- 디버그 결과: 최초 등록한 passphrase 있는 key는 서버가 public key를 인정했지만, Codex 비대화형 SSH 세션에서 private key passphrase를 풀 수 없어 인증이 최종 실패했다. 따라서 Codex 자동화 전용 no-pass key를 별도로 발급해 Hermes MacBook의 `authorized_keys`에 추가했다.
 
 ## Approach
 
-1. **접속 경로를 SSH 키 인증으로 고정한다.** Control MacBook에는 Codex 전용 passphrase 없는 ED25519 key를 두고, Hermes MacBook의 `~/.ssh/authorized_keys`에는 해당 public key만 등록한다. Codex 자동화는 항상 `-i ~/.ssh/id_ed25519_bobeenlee_nopass -o IdentitiesOnly=yes`를 붙여 의도한 키만 사용한다.
+1. **접속 경로를 SSH 키 인증으로 고정한다.** Control MacBook에는 Codex 전용 passphrase 없는 ED25519 key를 두고, Hermes MacBook의 `~/.ssh/authorized_keys`에는 해당 public key를 등록한다. Codex 자동화는 항상 `-i ~/.ssh/id_ed25519_bobeenlee_nopass -o IdentitiesOnly=yes`를 붙여 의도한 키만 사용한다. 기존 passphrase 있는 key는 사람이 직접 SSH할 때는 쓸 수 있지만 Codex의 `BatchMode=yes` 비대화형 실행에는 맞지 않는다.
+
+   운영 가드:
+   - private key 파일은 repo에 커밋하지 않고 Control MacBook의 `~/.ssh/`에만 둔다.
+   - 접근 회수는 Hermes MacBook의 `~/.ssh/authorized_keys`에서 `codex-to-bobeenlee-nopass` 줄을 제거하는 방식으로 한다.
+   - 구현 PR/문서에는 public key fingerprint까지만 남기고 private key, passphrase, secret은 기록하지 않는다.
 
 2. **회사 장비 보안 경계를 plan의 가드레일로 둔다.** 개인 Tailscale, 개인 원격 데스크톱, 외부 tunnel은 기본 비채택이다. 회사 IT/보안팀이 승인한 tailnet/VPN/bastion이 있으면 별도 revision에서 대체 경로로 문서화한다.
 
@@ -54,6 +60,7 @@ revisions:
 |------|------|------|
 | SSH 연결 | `ssh -i ~/.ssh/id_ed25519_bobeenlee_nopass -o IdentitiesOnly=yes bobeenlee@192.168.0.8 'whoami && hostname && pwd'` | `bobeenlee`, `BoBeenui-MacBookPro.local`, `/Users/bobeenlee` 출력 |
 | 권한/키 상태 | Hermes MacBook에서 `ssh-keygen -lf ~/.ssh/authorized_keys` | Codex 전용 public key fingerprint가 등록되어 있음 |
+| no-pass key 확인 | Control MacBook에서 `ssh-keygen -y -f ~/.ssh/id_ed25519_bobeenlee_nopass >/dev/null` | passphrase prompt 없이 성공 |
 | 네트워크 안정성 | Control MacBook에서 `nc -vz 192.168.0.8 22` | SSH port reachable |
 | 설치 dry run | `scripts/hermes/install.sh --dry-run` | 변경 예정 항목 출력, secret/private key 미출력 |
 | agent foreground | Hermes MacBook에서 agent foreground 실행 | process exits 0 또는 health endpoint/status command 성공 |
