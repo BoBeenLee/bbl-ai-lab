@@ -6,7 +6,7 @@
 
 | 명령어 | flow | 결과 | 상세 |
 |--------|------|------|------|
-| `/idea`, `/todo`, (평문) | `idea` | 아이디어를 구체화한 GitHub Issue 생성 | [docs/idea-elaborate.md](docs/idea-elaborate.md) |
+| `/idea`, `/todo` | `idea` | 아이디어를 구체화한 GitHub Issue 생성 | [docs/idea-elaborate.md](docs/idea-elaborate.md) |
 
 > 새 flow를 추가하면 이 표에 한 줄, 그리고 `docs/<flow>-<action>.md`에 상세 문서를 더한다.
 
@@ -28,7 +28,7 @@ idea 이슈가 만들어진 다음 단계인 **계획 명세화**는 클로드 �
 
 ```
 [Telegram User]
-  │ /<command> <본문>  또는 평문 (default flow로 라우팅)
+  │ /<command> <본문>
   ▼
 [Cloudflare Worker (tg-automation-bridge)]
   │ secret 검증, chat_id 화이트리스트
