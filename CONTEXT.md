@@ -11,7 +11,7 @@ Hermes agent를 설치·운영할 대상 MacBook. 이 plan에서는 `BoBeenui-Ma
 _Avoid_: 다른 맥북, 대상 기기
 
 **Hermes agent**:
-Hermes MacBook에서 백그라운드로 실행될 자동화 에이전트. 구체 실행 바이너리, 권한, health check는 구현 단계에서 확정한다.
+Hermes MacBook에서 설치·검증할 NousResearch/hermes-agent 기반 자동화 에이전트. 공식 per-user layout (`~/.hermes/hermes-agent`, `~/.hermes`, `~/.local/bin/hermes`)을 따른다.
 
 **Approved remote access path**:
 회사 장비 보안 정책을 우회하지 않는 원격 접속 경로. 이 plan에서는 같은 신뢰 네트워크 안의 SSH 키 인증을 우선하며, 개인 Tailscale 같은 overlay network는 회사 승인 전에는 사용하지 않는다.
