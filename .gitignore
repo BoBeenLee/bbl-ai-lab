@@ -30,3 +30,6 @@ dist/
 ### Python
 __pycache__/
 *.pyc
+
+### Gemini CLI (--yolo) 부산물 — recruit-analyze 실행 시 CWD 에 남을 수 있음
+/output.json
