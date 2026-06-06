@@ -10,6 +10,8 @@
 
 > 새 flow를 추가하면 이 표에 한 줄, 그리고 `docs/<flow>-<action>.md`에 상세 문서를 더한다.
 
+에이전트가 이 저장소를 수정할 때는 [AGENTS.md](AGENTS.md)의 flow registry 규칙을 먼저 따른다.
+
 ## 계획 관리 (`docs/plans/`)
 
 idea 이슈가 만들어진 다음 단계인 **계획 명세화**는 클로드 데스크탑/로컬에서 사람이 직접 진행한다. 산출물은 `docs/plans/<issue#>-<slug>.md` 로 PR 적재되고, 보강이 필요하면 같은 파일에 새 PR (revision) 을 올린다. `.github/workflows/plan-link-back.yml` 가 PR open/merge 시 연결 이슈에 자동 코멘트와 `has-plan` 라벨을 부착하고, `status: shipped` 면 이슈를 close 한다.
@@ -32,7 +34,7 @@ idea 이슈가 만들어진 다음 단계인 **계획 명세화**는 클로드 �
   ▼
 [Cloudflare Worker (tg-automation-bridge)]
   │ secret 검증, chat_id 화이트리스트
-  │ FLOWS 테이블에서 명령어 → eventType 매핑
+  │ worker/src/flows.ts manifest에서 명령어 → eventType 매핑
   │ GitHub repository_dispatch (event_type: <flow>-<action>)
   ▼
 [GitHub Action: <flow>-<action>.yml]
@@ -54,7 +56,9 @@ idea 이슈가 만들어진 다음 단계인 **계획 명세화**는 클로드 �
 ├── skills/
 │   └── *.SKILL.md                   ← Gemini에 attach할 skill 컨텍스트
 ├── worker/                          ← Cloudflare Worker (멀티 flow 라우터)
-│   ├── src/index.ts                 ←   FLOWS 테이블이 단일 진실원
+│   ├── src/flows.ts                 ←   flow manifest가 단일 진실원
+│   ├── src/index.ts                 ←   manifest를 읽어 Telegram webhook 라우팅
+│   ├── scripts/check-flows.mjs      ←   manifest ↔ adapter 파일/dispatch type 검증
 │   └── wrangler.toml
 └── docs/
     └── <flow>-<action>.md           ← flow별 상세 문서
@@ -69,27 +73,33 @@ idea 이슈가 만들어진 다음 단계인 **계획 명세화**는 클로드 �
 | GitHub Actions workflow | `.github/workflows/<flow>-<action>.yml` | `idea-elaborate.yml` |
 | 실행 스크립트 | `scripts/<flow>-<action>.sh` | `idea-elaborate.sh` |
 | Gemini 프롬프트 | `scripts/prompts/<flow>-<action>.md` | `idea-elaborate.md` |
-| repository_dispatch event_type | `<flow>-<action>` | `idea-submitted` (legacy) / 신규는 `<flow>-<action>` 권장 |
-| Worker 명령어 등록 | `worker/src/index.ts` 의 `FLOWS[]` | `commands: ["idea","todo"]` |
+| repository_dispatch event_type | `<flow>-<action>` | `idea-submitted` (legacy) / 신규는 `<flow>-<action>` |
+| Worker 명령어 등록 | `worker/src/flows.ts` manifest | `commands: ["idea","todo"]` |
 | 상세 문서 | `docs/<flow>-<action>.md` | `docs/idea-elaborate.md` |
 
 ## 새 flow 추가 가이드
 
-1. **Worker 등록**: `worker/src/index.ts`의 `FLOWS` 테이블에 한 항목 추가.
+1. **Flow manifest 등록**: `worker/src/flows.ts`에 한 항목 추가.
    ```ts
    {
      commands: ["meeting"],
      eventType: "meeting-summarize",
      usageHint: "예: /meeting <회의록 raw 텍스트>",
      ackText: "회의록 요약 시작.",
+     workflow: ".github/workflows/meeting-summarize.yml",
+     script: "scripts/meeting-summarize.sh",
+     prompt: "scripts/prompts/meeting-summarize.md",
+     docs: "docs/meeting-summarize.md",
    }
    ```
-2. **Workflow 추가**: `.github/workflows/meeting-summarize.yml` 작성, 트리거를 `repository_dispatch.types: [meeting-summarize]`로 지정.
+   subcommand flow는 `subcommands` 안에 action별 adapter 경로를 둔다. 예: `/recruit collect` → `eventType: "recruit-collect"`.
+2. **Workflow 추가**: manifest의 `workflow` 경로에 파일을 만들고, 트리거를 `repository_dispatch.types: [meeting-summarize]`로 지정.
 3. **스크립트 / 프롬프트 추가**: `scripts/meeting-summarize.sh`, `scripts/prompts/meeting-summarize.md`.
 4. **(선택) skill 컨텍스트 추가**: `skills/<name>.SKILL.md`.
 5. **상세 문서 작성**: `docs/meeting-summarize.md` (flow 개요, 트리거, 환경변수, 출력, 검증). 위 [등록된 flow](#등록된-flow) 표에 한 줄 추가.
-6. **Worker 재배포**: `cd worker && npx wrangler deploy`.
-7. **(선택) BotFather `/setcommands`** 에 새 명령어 등록.
+6. **검증**: `cd worker && npm run typecheck`. 이 명령은 TypeScript와 함께 manifest가 가리키는 workflow/script/prompt/docs 파일 존재 여부, workflow `repository_dispatch.types`, legacy event type 예외를 검사한다.
+7. **Worker 재배포**: `cd worker && npx wrangler deploy`.
+8. **(선택) BotFather `/setcommands`** 에 새 명령어 등록.
 
 ## 공통 인프라 셋업
 
