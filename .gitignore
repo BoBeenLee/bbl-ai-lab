@@ -30,3 +30,6 @@ dist/
 ### Python
 __pycache__/
 *.pyc
+
+### Local scratch
+.tmp/
