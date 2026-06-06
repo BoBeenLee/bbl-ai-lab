@@ -47,12 +47,6 @@ This runs TypeScript checking and verifies manifest drift against workflow `repo
 - Update `docs/<flow>-<action>.md` when a specific flow's trigger, environment, output, or verification changes.
 - Update `docs/plans/README.md` only when the plan document workflow changes.
 
-## Jira Comment Formatting
-
-- When posting Jira comments through the Naver Jira API, do not wrap inline code or identifiers with Jira wiki `{{...}}`; this instance may display the braces literally in comments.
-- Use Jira wiki headings and bullet lists for structure.
-- Reserve `{code}...{code}` blocks only for multi-line code or command output that truly needs monospace formatting.
-
 ## Safety Rules
 
 - Never commit secrets, OAuth credentials, Telegram bot tokens, GitHub tokens, SSH keys, `.env` files, or remote Hermes secrets.
