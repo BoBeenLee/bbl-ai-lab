@@ -2,7 +2,7 @@
 
 Operator repo for managing a Hermes Agent on a remote Mac over SSH/Tailscale.
 
-It is designed for the workflow used with `bobeen-macbookpro-2`: check whether Hermes is online, install/verify `computer_use`, initialize Kanban, restart the gateway, inspect Discord thread work from logs, and keep Hermes work inside a git-backed workspace lifecycle.
+It supports the `bobeen-macbookpro-2` flow: check Hermes, install/verify `computer_use`, initialize Kanban, restart gateway, inspect Discord thread work, and keep tasks inside a git-backed workspace lifecycle.
 
 ## Quick Start
 
@@ -42,34 +42,19 @@ Host bobeen
 ## Common Commands
 
 ```bash
-# Full status: gateway, computer_use, Kanban, dashboard, processes.
 bin/hermes-remote status
-
-# Install and wire Hermes computer_use on the remote Mac.
 bin/hermes-remote setup-computer-use
-
-# Ask macOS to grant CuaDriver Accessibility + Screen Recording.
-# This opens the permission flow on the remote Mac and waits.
 bin/hermes-remote grant-computer-use
-
-# Verify CuaDriver permissions, MCP tools, and screen/window access.
 bin/hermes-remote verify-computer-use
-
-# Initialize/check Kanban.
 bin/hermes-remote setup-kanban
-
-# Restart Hermes gateway after config changes.
+bin/hermes-remote antigravity-check
 bin/hermes-remote gateway-restart
-
-# Check whether a Discord thread is currently active.
 bin/hermes-remote is-working 1512384300689916064
-
-# Tail recent gateway/agent lines for a Discord thread ID.
 bin/hermes-remote tail-thread 1512384300689916064
-
-# Run a one-shot Hermes prompt remotely.
 bin/hermes-remote run "Use computer_use to report two visible apps."
 ```
+
+See `bin/hermes-remote help` for full CLI surface. Antigravity setup, auth, run, MCP worker, and collect commands are documented in [docs/antigravity-delegation.md](docs/antigravity-delegation.md).
 
 ## Workspace Lifecycle
 
@@ -82,8 +67,11 @@ Task types:
 - `incident-triage`
 - `market-research`
 - `analysis-report`
+- `delegated-implementation`
 
 Each task leaves a completion note with the branch/worktree, changed files or report path, tests/checks, source ledger when research-based, and completion mode: `done` or `review-required`.
+
+Antigravity delegated implementation uses [docs/antigravity-delegation.md](docs/antigravity-delegation.md). Hermes stays supervisor; completion is `review-required`.
 
 Market research and analysis tasks use the Research Analysis module in [docs/research-workflow.md](docs/research-workflow.md). Research-based work writes briefs, source ledgers, notes, and reports under:
 

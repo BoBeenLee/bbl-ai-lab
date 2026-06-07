@@ -1,6 +1,6 @@
 # Workspace Lifecycle
 
-The Workspace Lifecycle module is the deep interface for Hermes work in this repo. Hermes uses it for ops script changes, remote config changes, incident triage, market research, and analysis reports.
+The Workspace Lifecycle module is the deep interface for Hermes work in this repo. Hermes uses it for ops script changes, remote config changes, incident triage, market research, analysis reports, and delegated implementation work.
 
 ## Canonical Workspace
 
@@ -35,6 +35,7 @@ hermes -w
 | `incident-triage` | Investigating Discord threads, gateway logs, failed tasks, provider failures | Thread/log reference, status, likely cause, next action | `done` if no change; otherwise `review-required` |
 | `market-research` | Gathering current market information, competitors, products, pricing, policy, or trends | Brief, source ledger, notes, report path | `done` if report-only |
 | `analysis-report` | Synthesizing existing evidence into a durable report | Inputs, assumptions, report path | `done` if report-only |
+| `delegated-implementation` | Asking Antigravity CLI to implement inside an isolated worktree while Hermes supervises | Antigravity session id, branch/worktree, artifact path, diff/check summary | `review-required` |
 
 ## Required Interface
 
@@ -53,6 +54,7 @@ Use `review-required` for:
 - data collection scripts or recurring automation
 - remote config changes
 - gateway restart, launchd changes, permission grant, key/auth changes
+- Antigravity delegated implementation
 - any task where merge or operational application needs human approval
 
 ## Forbidden Outputs

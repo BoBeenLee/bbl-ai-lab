@@ -28,6 +28,10 @@ _Avoid_: ad hoc task instructions, scattered prompt rules
 The interface for market research and analysis work. It owns the brief, source ledger, notes, and report artifacts for research-based tasks.
 _Avoid_: loose notes, source-less summary
 
+**Antigravity delegated implementation**:
+A supervised implementation flow where Hermes creates an isolated remote git worktree, starts Antigravity CLI as an implementation worker through the `antigravity-worker` MCP toolset or manual tmux path, and then verifies the resulting diff, checks, logs, and completion note before any merge or operational application.
+_Avoid_: unattended Antigravity automation, gateway-owned Antigravity task
+
 **Source ledger**:
 The durable evidence list for research-based tasks. Each entry records source URL, title, publisher, retrieval time, relevance, and trust note.
 _Avoid_: links section, references dump

@@ -1,8 +1,6 @@
 # Hermes Remote Ops Agent Guide
 
-This directory contains an SSH-first operations toolkit for managing the remote Hermes Agent running on the Hermes MacBook.
-
-Use this guide before changing files in `hermes-remote-ops/` or operating the remote Mac.
+SSH-first toolkit for operating the remote Hermes Agent on the Hermes MacBook. Read this before changing files here or operating the remote Mac.
 
 ## Source Context
 
@@ -14,7 +12,7 @@ The operating model comes from:
 - `docs/discord-thread-triage.md`
 - migrated historical plans under `docs/plans/` when they are present after repo promotion
 
-Important language from the plan:
+Important terms:
 
 - **Control MacBook**: the local Mac where Codex/Desktop automation runs.
 - **Hermes MacBook**: the remote Mac that runs NousResearch `hermes-agent`.
@@ -25,17 +23,17 @@ Important language from the plan:
 
 ## Current Default Target
 
-Default values live in `config/example.env` and can be overridden by a local `.env`.
+Defaults live in `config/example.env`; local overrides live in ignored `.env`.
 
 - SSH alias: `bobeen`
 - Remote user: `bobeenlee`
-- Tailscale IP observed in prior setup: `100.89.89.70`
+- observed Tailscale IP: `100.89.89.70`
 - Remote Hermes command: `/Users/bobeenlee/.local/bin/hermes`
 - Remote CuaDriver command: `/Users/bobeenlee/.local/bin/cua-driver`
 - Remote Hermes config: `/Users/bobeenlee/.hermes/config.yaml`
 - Canonical remote workspace: `/Users/bobeenlee/Workspaces/hermes-remote-ops`
 
-Do not commit `.env`; it is intentionally ignored.
+Do not commit `.env`.
 
 ## Safety Rules
 
@@ -59,14 +57,7 @@ bin/hermes-remote check-ssh
 bin/hermes-remote status
 ```
 
-Start every Hermes repo task by applying `docs/workspace-lifecycle.md`:
-
-- choose the task type
-- use the canonical workspace root
-- work in an isolated branch/worktree
-- produce the required outputs
-- run task-specific checks
-- finish as `done` or `review-required`
+Start every Hermes repo task with `docs/workspace-lifecycle.md`: choose task type, use canonical workspace, isolate branch/worktree, produce required outputs, run checks, finish `done` or `review-required`.
 
 If SSH fails:
 
@@ -76,7 +67,7 @@ If SSH fails:
 
 ## Computer Use Workflow
 
-Use this when the remote Hermes agent needs macOS desktop control.
+Use `docs/workspace-lifecycle.md` plus this command path when Hermes needs macOS desktop control.
 
 ```bash
 bin/hermes-remote setup-computer-use
@@ -85,67 +76,37 @@ bin/hermes-remote verify-computer-use
 bin/hermes-remote gateway-restart
 ```
 
-Success criteria:
-
-- `hermes computer-use status` finds `cua-driver`.
-- `cua-driver permissions status` reports Accessibility and Screen Recording granted with source `driver-daemon`.
-- `hermes mcp test cua-driver` discovers tools.
-- `cua-driver get_screen_size` and `cua-driver list_windows` return data.
-
-Known gotcha from prior setup: non-interactive SSH may not load `~/.local/bin`. The toolkit patches the remote Hermes wrapper PATH so Hermes can find `cua-driver`.
+Success: Hermes finds `cua-driver`, permissions show Accessibility + Screen Recording from `driver-daemon`, MCP test discovers tools, screen/window commands return data. Known gotcha: non-interactive SSH may miss `~/.local/bin`; toolkit patches wrapper PATH.
 
 ## Kanban Workflow
 
-Use this when the remote Hermes agent should support durable tasks.
+Use when Hermes needs durable tasks.
 
 ```bash
 bin/hermes-remote setup-kanban
 bin/hermes-remote status
 ```
 
-Success criteria:
-
-- `~/.hermes/kanban.db` exists on the remote Mac.
-- `hermes kanban boards list` shows a current board, normally `default`.
-- `hermes kanban stats` returns counts without errors.
-- `kanban.dispatch_in_gateway: true` is present in config.
-- Gateway logs include `kanban dispatcher: embedded in gateway`.
+Success: `~/.hermes/kanban.db` exists, board list shows current board, stats work, config has `kanban.dispatch_in_gateway: true`, gateway logs show `kanban dispatcher: embedded in gateway`.
 
 ## Discord Thread Triage
 
-For a Discord URL like:
-
-```text
-https://discord.com/channels/<guild_id>/<channel_id>/<message_or_thread_id>
-```
-
-Use the final ID as the thread/chat ID unless logs prove otherwise.
+Detailed workflow: `docs/discord-thread-triage.md`. Wake Hermes from the user's Discord account by mentioning `@Bob Hermes`; do not use bot/webhook activation. For Discord URLs, use the final ID as thread/chat ID unless logs prove otherwise.
 
 ```bash
 bin/hermes-remote is-working <thread_id>
 bin/hermes-remote tail-thread <thread_id>
 ```
 
-Interpretation:
-
-- Working: recent `inbound message` without a later `response ready`, a live worker process beyond gateway/MCP, or Kanban `running > 0`.
-- Done: `response ready` followed by `Sending response`, no worker process, Kanban `running 0`.
-- Failed or incomplete: response exists but `errors.log` or `agent.log` shows tool/provider failures such as missing `brew`, failed deploy command, provider quota, or browser navigation errors.
+Interpret state using `docs/discord-thread-triage.md`: recent inbound/live worker/Kanban running means working; sent response/no worker/running 0 means done; errors in logs mean failed or incomplete.
 
 ## Market Research and Analysis
 
-Use this when Hermes is asked for market research, competitive analysis, product analysis, pricing checks, legal/policy scans, or trend reports.
+Follow `docs/research-workflow.md` for market/product/competitor/pricing/legal/policy/trend work. Current claims require web verification and a source ledger. Report-only work can be `done`; scripts, recurring automation, or remote config changes are `review-required`.
 
-Required artifact layout:
+## Antigravity Delegation
 
-```text
-research/briefs/<YYYY-MM-DD>-<slug>.md
-research/sources/<YYYY-MM-DD>-<slug>.jsonl
-research/notes/<YYYY-MM-DD>-<slug>.md
-reports/<YYYY-MM-DD>-<slug>.md
-```
-
-Follow `docs/research-workflow.md`. Latest information, market trends, prices, laws, policies, product comparisons, and recommendations require web verification. Report-only work can be `done`; data collection scripts, recurring automation, or remote config changes must be `review-required`.
+Follow `docs/antigravity-delegation.md`. Hermes supervises, Antigravity implements in an isolated worktree through manual tmux or `antigravity-worker`, and completion stays `review-required`.
 
 ## Gateway Operations
 

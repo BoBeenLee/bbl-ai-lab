@@ -1,5 +1,9 @@
 # Discord Thread Triage
 
+## Activation Rule
+
+When asking Hermes to start work from Discord, post from the user's Discord account and mention `@Bob Hermes`. Do not use a bot account or webhook for this activation path, because Hermes is expected to react to the user-account mention.
+
 Use this when a Discord message link looks like:
 
 ```text
