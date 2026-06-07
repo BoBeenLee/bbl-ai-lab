@@ -8,6 +8,8 @@ Antigravity delegated implementation lets Hermes call Antigravity CLI as an impl
 - `bin/hermes-remote antigravity-run` creates an isolated git worktree and branch.
 - v2 registers `antigravity-worker` as a Hermes MCP stdio server.
 - The MCP worker creates an isolated git worktree and branch, then runs Antigravity CLI as a repo-local implementation worker.
+- The MCP worker defaults to the Hermes remote ops workspace, but standalone product repos must pass an explicit `workspace` argument such as `/Users/bobeenlee/Workspaces/Todo`.
+- Hermes must verify the returned `workspace` and `gitRoot` before treating delegated output as relevant to the requested repo.
 - The default MCP execution mode is `print`, because it is non-interactive and avoids first-run TUI setup screens. `tmux` remains available for manual v1 sessions and explicit MCP requests.
 - Session names follow `antigravity-<YYYYMMDD-HHMMSS>-<slug>`.
 - Session artifacts are stored under `artifacts/antigravity/<session>/`.
@@ -31,8 +33,8 @@ bin/hermes-remote verify-antigravity-worker
 
 Hermes MCP tools exposed by `antigravity-worker`:
 
-- `antigravity_check()`
-- `antigravity_start_task(task, mode?)`
+- `antigravity_check(workspace?)`
+- `antigravity_start_task(task, mode?, workspace?)`
 - `antigravity_status(session)`
 - `antigravity_stop(session)`
 - `antigravity_collect(session)`
@@ -46,6 +48,7 @@ Do not copy provider tokens, `~/.hermes/auth.json`, SSH keys, `.env`, or other s
 ## Supervision Rules
 
 - Antigravity is allowed to implement only inside the isolated worktree.
+- For standalone repos, Hermes must create or clone the target repo workspace first, then pass that workspace path to `antigravity_start_task`.
 - Hermes verifies the final git diff and checks independently.
 - Automatic approval is allowed only for repo-local implementation and verification commands.
 - Destructive commands, remote config/auth changes, launchd changes, and gateway restarts require human review.
@@ -57,6 +60,7 @@ Every delegated implementation must leave:
 
 - task type: `delegated-implementation`
 - Antigravity session id
+- target workspace and git root
 - branch and worktree path
 - changed files or report path
 - tests/checks run

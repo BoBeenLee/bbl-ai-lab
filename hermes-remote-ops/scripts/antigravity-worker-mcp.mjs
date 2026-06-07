@@ -1,22 +1,29 @@
 #!/usr/bin/env node
 import { spawn } from "node:child_process";
-import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readFile, realpath, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 
 const home = process.env.HOME || "/Users/bobeenlee";
-const workspace = process.env.HERMES_REMOTE_WORKSPACE || path.join(home, "Workspaces", "hermes-remote-ops");
+const defaultWorkspace = process.env.HERMES_REMOTE_WORKSPACE || path.join(home, "Workspaces", "hermes-remote-ops");
+const workspacesRoot = path.join(home, "Workspaces");
 const agyBin = process.env.ANTIGRAVITY_BIN || path.join(home, ".local", "bin", "agy");
 const tmuxBin = process.env.TMUX_BIN || "tmux";
-const artifactRoot = process.env.ANTIGRAVITY_ARTIFACT_ROOT || path.join(workspace, "artifacts", "antigravity");
+const artifactRoot = process.env.ANTIGRAVITY_ARTIFACT_ROOT || path.join(defaultWorkspace, "artifacts", "antigravity");
 const remotePath = process.env.HERMES_REMOTE_PATH || `${home}/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin`;
 
 const tools = [
   {
     name: "antigravity_check",
     description: "Check Antigravity worker readiness: workspace, git, tmux, agy, auth, and artifact root.",
-    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+    inputSchema: {
+      type: "object",
+      properties: {
+        workspace: { type: "string", description: "Optional target git workspace. Defaults to the Hermes remote ops workspace." },
+      },
+      additionalProperties: false,
+    },
   },
   {
     name: "antigravity_start_task",
@@ -26,6 +33,7 @@ const tools = [
       properties: {
         task: { type: "string", description: "Implementation task brief for Antigravity." },
         mode: { type: "string", enum: ["print", "tmux"], default: "print" },
+        workspace: { type: "string", description: "Optional target git workspace. Required for standalone product repos outside the default Hermes workspace." },
       },
       required: ["task"],
       additionalProperties: false,
@@ -85,6 +93,30 @@ function shQuote(value) {
   return `'${String(value).replace(/'/g, `'\\''`)}'`;
 }
 
+function normalizeWorkspacePath(value) {
+  const raw = String(value || defaultWorkspace).trim();
+  if (!raw) throw new Error("workspace must not be empty");
+  const expanded = raw === "~" ? home : raw.startsWith("~/") ? path.join(home, raw.slice(2)) : raw;
+  const resolved = path.resolve(expanded);
+  const root = path.resolve(workspacesRoot);
+  if (resolved !== root && !resolved.startsWith(`${root}${path.sep}`)) {
+    throw new Error(`workspace must be under ${workspacesRoot}: ${resolved}`);
+  }
+  return resolved;
+}
+
+async function resolveWorkspace(value) {
+  const resolved = normalizeWorkspacePath(value);
+  if (existsSync(resolved)) {
+    const real = await realpath(resolved);
+    const realRoot = await realpath(workspacesRoot);
+    if (real !== realRoot && !real.startsWith(`${realRoot}${path.sep}`)) {
+      throw new Error(`workspace real path must stay under ${workspacesRoot}: ${real}`);
+    }
+  }
+  return resolved;
+}
+
 function pidRunning(pid) {
   if (!pid) return false;
   try {
@@ -116,7 +148,7 @@ function run(command, args = [], options = {}) {
   return new Promise((resolve) => {
     let settled = false;
     const child = spawn(command, args, {
-      cwd: options.cwd || workspace,
+      cwd: options.cwd || defaultWorkspace,
       env: { ...process.env, PATH: remotePath },
       shell: false,
     });
@@ -224,6 +256,8 @@ async function writeCompletionNote(session, env) {
     "- task type: delegated-implementation",
     `- Antigravity session id: ${session}`,
     `- branch: ${env.branch || "unknown"}`,
+    `- target workspace: ${env.workspace || "unknown"}`,
+    `- target git root: ${env.git_root || "unknown"}`,
     `- worktree path: ${env.worktree || "unknown"}`,
     `- changed files or report path: see ${path.join(env.artifactDir, "git-summary.txt")}`,
     "- tests/checks run: verify manually from Antigravity log and rerun required checks",
@@ -236,15 +270,17 @@ async function writeCompletionNote(session, env) {
   await writeFile(path.join(env.artifactDir, "completion-note.md"), note);
 }
 
-async function antigravityCheck() {
-  const git = await run("git", ["-C", workspace, "rev-parse", "--show-toplevel"]);
-  const gitStatus = await run("git", ["-C", workspace, "status", "--short"]);
+async function antigravityCheck(args = {}) {
+  const targetWorkspace = await resolveWorkspace(args.workspace);
+  const git = await run("git", ["-C", targetWorkspace, "rev-parse", "--show-toplevel"]);
+  const gitStatus = await run("git", ["-C", targetWorkspace, "status", "--short"]);
   const tmux = await run(tmuxBin, ["-V"]);
   const agy = await run(agyBin, ["--version"]);
   const models = await run(agyBin, ["models"], { timeoutMs: 15000 });
   return {
-    workspace,
-    workspacePresent: existsSync(workspace),
+    workspace: targetWorkspace,
+    defaultWorkspace,
+    workspacePresent: existsSync(targetWorkspace),
     gitRoot: git.code === 0 ? git.stdout.trim() : null,
     gitStatus: gitStatus.stdout.trim(),
     tmux: tmux.code === 0 ? tmux.stdout.trim() : null,
@@ -261,9 +297,10 @@ async function antigravityStartTask(args) {
   if (!task) throw new Error("task is required");
   const mode = args.mode || "print";
   if (!["print", "tmux"].includes(mode)) throw new Error("mode must be print or tmux");
+  const targetWorkspace = await resolveWorkspace(args.workspace);
 
-  const readiness = await antigravityCheck();
-  if (!readiness.workspacePresent || !readiness.gitRoot) throw new Error(`workspace is not a git repository: ${workspace}`);
+  const readiness = await antigravityCheck({ workspace: targetWorkspace });
+  if (!readiness.workspacePresent || !readiness.gitRoot) throw new Error(`workspace is not a git repository: ${targetWorkspace}`);
   if (mode === "tmux" && !readiness.tmux) throw new Error("tmux is missing");
   if (!readiness.agy) throw new Error("Antigravity CLI is missing");
   if (!readiness.authenticated) throw new Error("Antigravity CLI is not authenticated");
@@ -271,19 +308,28 @@ async function antigravityStartTask(args) {
   const timestamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\..*/, "").replace("T", "-");
   const slug = slugify(task);
   const session = `antigravity-${timestamp}-${slug}`;
-  const worktreeRoot = path.join(path.dirname(workspace), "antigravity-worktrees");
+  const worktreeRoot = path.join(path.dirname(targetWorkspace), "antigravity-worktrees");
   const worktree = path.join(worktreeRoot, session);
   const artifactDir = path.join(artifactRoot, session);
   const branch = `codex/antigravity/${timestamp}-${slug}`;
 
   await mkdir(worktreeRoot, { recursive: true });
   await mkdir(artifactDir, { recursive: true });
-  const add = await run("git", ["-C", workspace, "worktree", "add", "-b", branch, worktree, "HEAD"]);
+  const add = await run("git", ["-C", targetWorkspace, "worktree", "add", "-b", branch, worktree, "HEAD"]);
   if (add.code !== 0) throw new Error(add.stderr || add.stdout || "git worktree add failed");
 
   await writeFile(path.join(artifactDir, "task.txt"), `${task}\n`);
   const sessionEnvPath = path.join(artifactDir, "session.env");
-  const sessionEnv = [`session=${session}`, `branch=${branch}`, `worktree=${worktree}`, `artifact_dir=${artifactDir}`, `mode=${mode}`, "completion_mode=review-required"];
+  const sessionEnv = [
+    `session=${session}`,
+    `branch=${branch}`,
+    `workspace=${targetWorkspace}`,
+    `git_root=${readiness.gitRoot}`,
+    `worktree=${worktree}`,
+    `artifact_dir=${artifactDir}`,
+    `mode=${mode}`,
+    "completion_mode=review-required",
+  ];
   await writeFile(
     path.join(artifactDir, "supervisor-instructions.md"),
     [
@@ -291,6 +337,8 @@ async function antigravityStartTask(args) {
       "",
       "- Antigravity is the implementation worker.",
       "- Hermes must verify git diff and checks independently.",
+      `- Target workspace: ${targetWorkspace}`,
+      `- Target git root: ${readiness.gitRoot}`,
       "- Keep changes inside this isolated worktree.",
       "- Do not read or print .env, SSH keys, ~/.hermes/auth.json, provider tokens, or copied secret files.",
       "- Destructive commands and remote config/auth changes require human review.",
@@ -301,6 +349,8 @@ async function antigravityStartTask(args) {
 
   const prompt = [
     "You are Antigravity CLI acting as an implementation worker under Hermes supervision.",
+    `The target repository workspace is: ${targetWorkspace}.`,
+    `The target repository git root is: ${readiness.gitRoot}.`,
     `Work only in this isolated worktree: ${worktree}.`,
     "Use automatic approvals only for repo-local implementation and verification commands.",
     "Never inspect, list, read, copy, or print secret-bearing paths or files, including ~/.ssh, ~/.hermes/auth.json, ~/.hermes/.env, .env files, provider token files, OAuth credential files, or private keys.",
@@ -354,7 +404,18 @@ async function antigravityStartTask(args) {
   }
   await writeFile(sessionEnvPath, `${sessionEnv.join("\n")}\n`);
 
-  return { session, branch, worktree, artifactDir, mode, pid: sessionEnv.find((line) => line.startsWith("pid="))?.slice(4) || null, status: "started", completionMode: "review-required" };
+  return {
+    session,
+    branch,
+    workspace: targetWorkspace,
+    gitRoot: readiness.gitRoot,
+    worktree,
+    artifactDir,
+    mode,
+    pid: sessionEnv.find((line) => line.startsWith("pid="))?.slice(4) || null,
+    status: "started",
+    completionMode: "review-required",
+  };
 }
 
 async function antigravityStatus(args) {
@@ -375,6 +436,8 @@ async function antigravityStatus(args) {
     runner: env.runner || null,
     tmux: sanitize(list.stdout),
     artifactDir: env.artifactDir,
+    workspace: env.workspace || null,
+    gitRoot: env.git_root || null,
     worktree: env.worktree || null,
     branch: env.branch || null,
     gitStatus: gitStatus.stdout.trim(),
@@ -412,6 +475,8 @@ async function antigravityCollect(args) {
   return {
     session,
     branch: env.branch || null,
+    workspace: env.workspace || null,
+    gitRoot: env.git_root || null,
     worktree: env.worktree || null,
     artifactDir: env.artifactDir,
     gitStatus: summary.gitStatus.trim(),
@@ -423,7 +488,7 @@ async function antigravityCollect(args) {
 }
 
 async function callTool(name, args) {
-  if (name === "antigravity_check") return antigravityCheck();
+  if (name === "antigravity_check") return antigravityCheck(args || {});
   if (name === "antigravity_start_task") return antigravityStartTask(args || {});
   if (name === "antigravity_status") return antigravityStatus(args || {});
   if (name === "antigravity_stop") return antigravityStop(args || {});

@@ -108,6 +108,21 @@ Follow `docs/research-workflow.md` for market/product/competitor/pricing/legal/p
 
 Follow `docs/antigravity-delegation.md`. Hermes supervises, Antigravity implements in an isolated worktree through manual tmux or `antigravity-worker`, and completion stays `review-required`.
 
+## New Repository HIL Gate
+
+When a user asks for a new standalone service, product, app, site, or tool, Hermes must decide whether the request belongs in the current workspace or needs a new repository. If a new repository is appropriate, Hermes must stop before creation and request HIL approval.
+
+The HIL request must include:
+
+- owner or org
+- repo name
+- visibility: `private` or `public`
+- initial stack or scaffold
+- deployment target, such as `gh-pages`, Vercel, or Cloudflare Pages
+- whether implementation should be delegated to Antigravity
+
+Only after explicit approval may Hermes create the GitHub repo, clone a new remote workspace, scaffold files, delegate implementation, configure deployment, or push initial branches. Repo creation, deployment setup, provider configuration, permissions, and Antigravity implementation must finish as `review-required`.
+
 ## Gateway Operations
 
 After config changes:

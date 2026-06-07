@@ -32,6 +32,10 @@ _Avoid_: loose notes, source-less summary
 A supervised implementation flow where Hermes creates an isolated remote git worktree, starts Antigravity CLI as an implementation worker through the `antigravity-worker` MCP toolset or manual tmux path, and then verifies the resulting diff, checks, logs, and completion note before any merge or operational application.
 _Avoid_: unattended Antigravity automation, gateway-owned Antigravity task
 
+**New repository HIL gate**:
+The approval checkpoint Hermes must use before creating a new GitHub repository, cloning a new service workspace, or changing deployment/provider configuration for a standalone product or service. Hermes may infer that a new repository is appropriate, but must ask the human to approve owner, repo name, visibility, stack, deployment target, and delegation mode before taking creation or setup actions.
+_Avoid_: automatic repo creation, implicit product workspace setup
+
 **Source ledger**:
 The durable evidence list for research-based tasks. Each entry records source URL, title, publisher, retrieval time, relevance, and trust note.
 _Avoid_: links section, references dump

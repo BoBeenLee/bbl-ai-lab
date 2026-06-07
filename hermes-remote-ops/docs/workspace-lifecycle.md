@@ -36,6 +36,7 @@ hermes -w
 | `market-research` | Gathering current market information, competitors, products, pricing, policy, or trends | Brief, source ledger, notes, report path | `done` if report-only |
 | `analysis-report` | Synthesizing existing evidence into a durable report | Inputs, assumptions, report path | `done` if report-only |
 | `delegated-implementation` | Asking Antigravity CLI to implement inside an isolated worktree while Hermes supervises | Antigravity session id, branch/worktree, artifact path, diff/check summary | `review-required` |
+| `new-repo-hil` | A standalone service, product, app, site, or tool appears to need its own GitHub repo/workspace | Proposed owner, repo name, visibility, stack, deployment target, delegation mode | `review-required`; wait for approval before creation |
 
 ## Required Interface
 
@@ -53,9 +54,27 @@ Use `review-required` for:
 - code or shell script changes
 - data collection scripts or recurring automation
 - remote config changes
+- new repository/workspace creation or deployment setup
 - gateway restart, launchd changes, permission grant, key/auth changes
 - Antigravity delegated implementation
 - any task where merge or operational application needs human approval
+
+## New Repository HIL Gate
+
+Hermes should infer whether a request belongs in the current repo or needs a new standalone repository. Examples that usually need the gate include "make a todo service", "create a new SaaS app", "build a separate landing site", or any request where product code should not live in `hermes-remote-ops` or `hermes-workspace`.
+
+Before creating or cloning a new repo, Hermes must ask for HIL approval with:
+
+- owner or org
+- repo name
+- visibility: `private` or `public`
+- initial stack or scaffold
+- deployment target
+- Antigravity delegation mode
+
+After approval, Hermes may create the repo, clone the workspace, scaffold, delegate implementation, verify, and deploy. The completion note must include the approved HIL values and end as `review-required`.
+
+When delegating implementation for a new repo, Hermes must pass the approved repo workspace path to Antigravity. For example, use `/Users/bobeenlee/Workspaces/Todo` as the `workspace` argument for `antigravity_start_task`; do not let a standalone product task default back to `hermes-remote-ops` or `hermes-workspace`.
 
 ## Forbidden Outputs
 
