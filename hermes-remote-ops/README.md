@@ -4,6 +4,8 @@ Operator repo for managing a Hermes Agent on a remote Mac over SSH/Tailscale.
 
 It supports the `bobeen-macbookpro-2` flow: check Hermes, install/verify `computer_use`, initialize Kanban, restart gateway, inspect Discord thread work, and keep tasks inside a git-backed workspace lifecycle.
 
+Discord requests that are ambiguous or risky pass through a human-in-the-loop clarification gate before execution. Hermes uses the external mattpocock `grill-me` skill for one-question-at-a-time clarification, then waits for an Approval Summary to be approved in the Discord thread.
+
 ## Quick Start
 
 Agent/Claude operators should read `AGENTS.md` first. `CLAUDE.md` points Claude-style agents to the same guide.
@@ -72,6 +74,12 @@ Task types:
 Each task leaves a completion note with the branch/worktree, changed files or report path, tests/checks, source ledger when research-based, and completion mode: `done` or `review-required`.
 
 Antigravity delegated implementation uses [docs/antigravity-delegation.md](docs/antigravity-delegation.md). Hermes stays supervisor; completion is `review-required`.
+
+Discord HIL clarification is documented in [docs/discord-thread-triage.md](docs/discord-thread-triage.md). The remote Hermes profile should have `grill-me` installed from `mattpocock/skills`:
+
+```bash
+npx -y skills@latest add https://github.com/mattpocock/skills --skill grill-me --yes --global
+```
 
 Market research and analysis tasks use the Research Analysis module in [docs/research-workflow.md](docs/research-workflow.md). Research-based work writes briefs, source ledgers, notes, and reports under:
 

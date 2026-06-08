@@ -20,6 +20,8 @@ Important terms:
 - **Remote access path**: SSH key access from Control MacBook to Hermes MacBook. Tailscale/LAN aliases are access paths, not application state.
 - **Workspace Lifecycle module**: the interface every Hermes task follows before it is reported as `done` or `review-required`.
 - **Research Analysis module**: the interface for market research and analysis work, including brief, source ledger, notes, and report artifacts.
+- **Discord HIL Gate**: the human-in-the-loop clarification checkpoint Hermes uses before acting on ambiguous or risky Discord requests.
+- **Approval Summary**: the final Discord message Hermes posts after clarification, summarizing the intended work for explicit human approval.
 
 ## Current Default Target
 
@@ -99,6 +101,14 @@ bin/hermes-remote tail-thread <thread_id>
 ```
 
 Interpret state using `docs/discord-thread-triage.md`: recent inbound/live worker/Kanban running means working; sent response/no worker/running 0 means done; errors in logs mean failed or incomplete.
+
+## Discord HIL Gate
+
+When a Discord request is ambiguous or risky, Hermes must clarify before acting. Use the externally installed mattpocock `grill-me` skill, not a local custom clone, to ask one question at a time and include Hermes' recommended answer with each question.
+
+Apply the gate when the request has unclear goals, success criteria, target workspace/repo, write scope, remote config/auth/deployment impact, recurring automation impact, Antigravity delegation, or possible standalone repo creation. Skip it for clear read-only status checks and simple thread triage.
+
+During the gate, do not edit files, change remote config, restart the gateway, create repositories, deploy, change auth/keys, or start Antigravity. After the questions are resolved, post an Approval Summary in the same Discord thread with goal, scope/non-goals, target workspace/repo, expected changes, verification, and completion mode. Start the Workspace Lifecycle task only after explicit approval. If clarification shows a standalone repo is needed, continue into the New Repository HIL Gate.
 
 ## Market Research and Analysis
 

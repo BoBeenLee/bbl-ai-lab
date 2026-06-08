@@ -26,6 +26,23 @@ cd /Users/bobeenlee/Workspaces/hermes-remote-ops
 hermes -w
 ```
 
+## Discord HIL Gate
+
+Discord requests pass through the Discord HIL Gate before this lifecycle when they are ambiguous or risky. Hermes uses the externally installed mattpocock `grill-me` skill to ask one question at a time in the original Discord thread.
+
+Skip the gate for clear read-only status checks. Use the gate before any work where goal, success criteria, target workspace/repo, write scope, remote config/auth/deployment impact, recurring automation impact, Antigravity delegation, or standalone repo need is unclear.
+
+No Workspace Lifecycle task may start until Hermes posts an Approval Summary and the user explicitly approves it. The Approval Summary must include:
+
+- goal
+- scope and non-goals
+- target workspace or repo
+- expected changes, or read-only status
+- verification commands or checks
+- completion mode: `done` or `review-required`
+
+If the Approval Summary identifies a standalone service, product, app, site, tool, or repo, continue with the New Repository HIL Gate before creating repos, cloning workspaces, scaffolding, delegating, configuring deployment, or pushing branches.
+
 ## Task Types
 
 | Type | Use when | Required outputs | Completion mode |
@@ -43,6 +60,7 @@ hermes -w
 Every task must leave a concise completion note with:
 
 - task type
+- HIL status: `skipped` or `completed`; if completed, include the Approval Summary and Discord thread id
 - branch and worktree path, or `none` for read-only work
 - changed files or report path
 - tests/checks run

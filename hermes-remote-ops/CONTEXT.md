@@ -28,6 +28,14 @@ _Avoid_: ad hoc task instructions, scattered prompt rules
 The interface for market research and analysis work. It owns the brief, source ledger, notes, and report artifacts for research-based tasks.
 _Avoid_: loose notes, source-less summary
 
+**Discord HIL Gate**:
+The human-in-the-loop clarification checkpoint Hermes uses before acting on ambiguous or risky Discord requests. Hermes uses the externally installed mattpocock `grill-me` skill to ask one question at a time, then waits for explicit approval before entering the Workspace Lifecycle.
+_Avoid_: automatic execution from vague Discord prompts, local custom grill skill
+
+**Approval Summary**:
+The final Discord message Hermes posts after HIL clarification and before execution. It records the goal, scope/non-goals, target workspace or repo, expected changes, verification, and completion mode for human approval.
+_Avoid_: implicit approval, informal "I'll do it" messages
+
 **Antigravity delegated implementation**:
 A supervised implementation flow where Hermes creates an isolated remote git worktree, starts Antigravity CLI as an implementation worker through the `antigravity-worker` MCP toolset or manual tmux path, and then verifies the resulting diff, checks, logs, and completion note before any merge or operational application.
 _Avoid_: unattended Antigravity automation, gateway-owned Antigravity task
