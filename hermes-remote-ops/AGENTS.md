@@ -10,12 +10,14 @@ The operating model comes from:
 - `docs/workspace-lifecycle.md`
 - `docs/research-workflow.md`
 - `docs/discord-thread-triage.md`
+- `docs/dgx-spark-remote-access.md` for DGX Spark / AI TOP ATOM remote access
 - migrated historical plans under `docs/plans/` when they are present after repo promotion
 
 Important terms:
 
 - **Control MacBook**: the local Mac where Codex/Desktop automation runs.
 - **Hermes MacBook**: the remote Mac that runs NousResearch `hermes-agent`.
+- **DGX Spark**: the user's NVIDIA DGX Spark / GIGABYTE AI TOP ATOM Linux workstation. It is separate from the Hermes MacBook; use `docs/dgx-spark-remote-access.md` for SSH, dashboard, RDP/xrdp, and browser setup.
 - **Hermes agent**: the per-user Hermes install at `~/.hermes/hermes-agent`, with config/data/logs under `~/.hermes` and command wrapper at `~/.local/bin/hermes`.
 - **Remote access path**: SSH key access from Control MacBook to Hermes MacBook. Tailscale/LAN aliases are access paths, not application state.
 - **Workspace Lifecycle module**: the interface every Hermes task follows before it is reported as `done` or `review-required`.
@@ -158,6 +160,18 @@ bin/hermes-remote dashboard-start
 ```
 
 It binds to `127.0.0.1:9119` on the remote Mac by default. Do not use insecure external binding unless explicitly requested.
+
+## DGX Spark Operations
+
+Use `docs/dgx-spark-remote-access.md` when the user asks about `aitopatom-36a9`, `172.30.1.87`, DGX Spark, AI TOP ATOM, DGX Dashboard, RDP, xrdp, or Chromium/Chrome on the DGX Spark.
+
+Key reminders:
+
+- Do not commit or print the user's SSH/RDP password.
+- The DGX Spark is arm64; do not install amd64 Chrome `.deb` packages. Use Chromium arm64/snap when needed.
+- The initial setup web UI on port `80` can disappear after onboarding. SSH and dashboard may still be healthy.
+- The DGX Dashboard was observed at remote `127.0.0.1:11000`; use an SSH tunnel instead of external binding.
+- For remote desktop, prefer the documented xrdp fallback if GNOME Remote Desktop fails with routing token or Windows App `0x207` errors.
 
 ## Verification Before Finishing
 

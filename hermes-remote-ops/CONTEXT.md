@@ -14,6 +14,14 @@ _Avoid_: local laptop, Claude Mac
 The remote Mac that runs NousResearch `hermes-agent` for the user account.
 _Avoid_: target machine, other Mac
 
+**DGX Spark**:
+The user's NVIDIA DGX Spark / GIGABYTE AI TOP ATOM Linux workstation reachable on the LAN for SSH, DGX Dashboard, and remote desktop work. It is not the Hermes MacBook. Current observed access path is `bobeenlee@172.30.1.87` / `aitopatom-36a9.local`.
+_Avoid_: assuming DGX operations use the Hermes MacBook tooling, treating the onboarding web UI as a permanent service
+
+**DGX Dashboard**:
+The NVIDIA dashboard service on the DGX Spark. It was observed bound to `127.0.0.1:11000` on the device and should be reached from the Control MacBook through an SSH tunnel unless the user explicitly asks for external binding.
+_Avoid_: exposing dashboard externally by default, confusing with Hermes dashboard
+
 **Hermes agent**:
 The per-user Hermes install at `~/.hermes/hermes-agent`, with config/data/logs under `~/.hermes` and command wrapper at `~/.local/bin/hermes`.
 

@@ -4,6 +4,8 @@ Operator repo for managing a Hermes Agent on a remote Mac over SSH/Tailscale.
 
 It supports the `bobeen-macbookpro-2` flow: check Hermes, install/verify `computer_use`, initialize Kanban, restart gateway, inspect Discord thread work, and keep tasks inside a git-backed workspace lifecycle.
 
+It also records the DGX Spark / AI TOP ATOM remote access path for `bobeenlee`, including SSH, DGX Dashboard tunneling, RDP/xrdp setup, and Chromium-on-arm64 notes. See [docs/dgx-spark-remote-access.md](docs/dgx-spark-remote-access.md).
+
 Discord requests that are ambiguous or risky pass through a human-in-the-loop clarification gate before execution. Hermes uses the external mattpocock `grill-me` skill for one-question-at-a-time clarification, then waits for an Approval Summary to be approved in the Discord thread.
 
 ## Quick Start
@@ -57,6 +59,8 @@ bin/hermes-remote run "Use computer_use to report two visible apps."
 ```
 
 See `bin/hermes-remote help` for full CLI surface. Antigravity setup, auth, run, MCP worker, and collect commands are documented in [docs/antigravity-delegation.md](docs/antigravity-delegation.md).
+
+DGX Spark access is documented separately in [docs/dgx-spark-remote-access.md](docs/dgx-spark-remote-access.md). Start there when the user asks about `aitopatom-36a9`, `172.30.1.87`, DGX Dashboard, RDP, xrdp, or Chromium on the DGX Spark.
 
 ## Workspace Lifecycle
 
