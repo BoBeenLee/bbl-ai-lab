@@ -7,6 +7,7 @@ This guide records the working access path for the user's NVIDIA DGX Spark so fu
 - Device: NVIDIA DGX Spark / GIGABYTE AI TOP ATOM
 - Linux host: `aitopatom-36a9`
 - LAN IP observed during setup: `172.30.1.87`
+- Tailscale IP observed after setup: `100.103.30.62`
 - SSH user: `bobeenlee`
 - Primary interface observed on the device: `wlP9s9`
 - DGX Dashboard service: bound on the device at `127.0.0.1:11000`
@@ -54,6 +55,12 @@ SSH login:
 ssh bobeenlee@172.30.1.87
 ```
 
+Tailscale SSH login after the device is joined to the tailnet:
+
+```bash
+ssh -i ~/.ssh/id_ed25519_bobeenlee_nopass bobeenlee@100.103.30.62
+```
+
 Useful remote checks:
 
 ```bash
@@ -64,6 +71,88 @@ systemctl --no-pager --failed
 nvidia-smi
 ss -ltnp | grep -E ':(22|80|3389|11000)'
 ```
+
+## Tailscale Access
+
+Tailscale was installed from the official Ubuntu `noble` apt repository on the DGX Spark. The system service is `tailscaled`, and the observed tailnet address is:
+
+```text
+100.103.30.62
+```
+
+Check status from the DGX:
+
+```bash
+tailscale status
+tailscale ip -4
+systemctl --no-pager status tailscaled
+```
+
+From the Control MacBook, SSH over Tailscale works with the existing DGX key:
+
+```bash
+ssh -i ~/.ssh/id_ed25519_bobeenlee_nopass bobeenlee@100.103.30.62
+```
+
+Keep local web services bound to loopback on the DGX and access them with SSH tunnels over Tailscale:
+
+```bash
+ssh -i ~/.ssh/id_ed25519_bobeenlee_nopass \
+  -L 8080:127.0.0.1:8080 \
+  -L 8188:127.0.0.1:8188 \
+  bobeenlee@100.103.30.62
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8080/v1/models
+http://127.0.0.1:8188
+```
+
+Do not expose `llama-server`, ComfyUI, or the DGX Dashboard directly with `tailscale serve` unless the user explicitly asks.
+
+## Local AI Services
+
+`llama-server` is configured as a manual user service. It should not start automatically at boot:
+
+```bash
+systemctl --user is-enabled llama-gemma.service
+systemctl --user start llama-gemma.service
+systemctl --user stop llama-gemma.service
+```
+
+ComfyUI is configured as an enabled user service and should start automatically after boot because lingering is enabled for `bobeenlee`:
+
+```bash
+loginctl show-user bobeenlee -p Linger
+systemctl --user status comfyui.service
+systemctl --user restart comfyui.service
+journalctl --user -u comfyui.service -n 100 --no-pager
+```
+
+Both services are intended to bind only to loopback:
+
+```bash
+ss -ltnp | grep -E ':(8080|8188)'
+```
+
+The DGX desktop also has a local GTK control app for these services:
+
+```bash
+dgx-ai-control
+dgx-ai-control --check
+```
+
+Installed paths:
+
+```text
+/home/bobeenlee/src/dgx-ai-control
+/home/bobeenlee/.local/bin/dgx-ai-control
+/home/bobeenlee/.local/share/applications/dgx-ai-control.desktop
+```
+
+The app can start, stop, restart, and toggle boot auto-start for `llama-gemma.service` and `comfyui.service`. It uses only `systemctl --user`, stores no sudo password, and does not expose any network ports.
 
 ## DGX Dashboard
 
@@ -147,6 +236,8 @@ If Windows App still fails with routing token or redirection errors, use xrdp in
 
 xrdp avoids the GNOME Remote Desktop routing-token failure by creating an RDP/Xorg session directly.
 
+Current preferred RDP path: use `xrdp`. `gnome-remote-desktop.service` was disabled because it can race with `xrdp` for port `3389` at boot. When both are enabled, `xrdp` may fail with a bind error and the Control MacBook sees `3389` as closed.
+
 Install:
 
 ```bash
@@ -158,6 +249,7 @@ If `gnome-remote-desktop` already owns port `3389`, stop or disable it first:
 
 ```bash
 sudo systemctl stop gnome-remote-desktop.service
+sudo systemctl disable gnome-remote-desktop.service
 sudo grdctl --system rdp disable || true
 ```
 
@@ -179,6 +271,7 @@ Verify:
 
 ```bash
 systemctl --no-pager status xrdp xrdp-sesman
+systemctl is-enabled xrdp xrdp-sesman gnome-remote-desktop.service
 ss -ltnp | grep -E ':(3389|3350)'
 journalctl -u xrdp -u xrdp-sesman --no-pager -n 80
 ```
