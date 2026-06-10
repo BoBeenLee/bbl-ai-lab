@@ -1,9 +1,9 @@
 [submodule ".agents/marketingskills"]
 	path = .agents/marketingskills
 	url = https://github.com/coreyhaines31/marketingskills.git
-[submodule "ops/comfyui"]
-	path = ops/comfyui
-	url = https://github.com/BoBeenLee/comfyui-ops.git
+[submodule "ops/remote-comfyui"]
+	path = ops/remote-comfyui
+	url = https://github.com/BoBeenLee/remote-comfyui.git
 [submodule "hermes-workspace"]
 	path = hermes-workspace
 	url = https://github.com/BoBeenLee/hermes-workspace.git
