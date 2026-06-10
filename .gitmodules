@@ -4,3 +4,6 @@
 [submodule "ops/comfyui"]
 	path = ops/comfyui
 	url = https://github.com/BoBeenLee/comfyui-ops.git
+[submodule "hermes-workspace"]
+	path = hermes-workspace
+	url = https://github.com/BoBeenLee/hermes-workspace.git
