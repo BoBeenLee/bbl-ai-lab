@@ -7,14 +7,14 @@ The Workspace Lifecycle module is the deep interface for Hermes work in this rep
 The remote Hermes workspace is:
 
 ```text
-/Users/bobeenlee/Workspaces/hermes-remote-ops
+/Users/bobeenlee/Workspaces/hermes-workspace
 ```
 
 Hermes should run from that repo root and use git worktree isolation:
 
 ```yaml
 terminal:
-  cwd: "/Users/bobeenlee/Workspaces/hermes-remote-ops"
+  cwd: "/Users/bobeenlee/Workspaces/hermes-workspace"
 
 worktree: true
 ```
@@ -22,7 +22,7 @@ worktree: true
 For one-shot CLI work:
 
 ```bash
-cd /Users/bobeenlee/Workspaces/hermes-remote-ops
+cd /Users/bobeenlee/Workspaces/hermes-workspace
 hermes -w
 ```
 
@@ -79,7 +79,7 @@ Use `review-required` for:
 
 ## New Repository HIL Gate
 
-Hermes should infer whether a request belongs in the current repo or needs a new standalone repository. Examples that usually need the gate include "make a todo service", "create a new SaaS app", "build a separate landing site", or any request where product code should not live in `hermes-remote-ops` or `hermes-workspace`.
+Hermes should infer whether a request belongs in the current repo or needs a new standalone repository. Examples that usually need the gate include "make a todo service", "create a new SaaS app", "build a separate landing site", or any request where product code should not live in `hermes-workspace`.
 
 Before creating or cloning a new repo, Hermes must ask for HIL approval with:
 
@@ -92,7 +92,7 @@ Before creating or cloning a new repo, Hermes must ask for HIL approval with:
 
 After approval, Hermes may create the repo, clone the workspace, scaffold, delegate implementation, verify, and deploy. The completion note must include the approved HIL values and end as `review-required`.
 
-When delegating implementation for a new repo, Hermes must pass the approved repo workspace path to Antigravity. For example, use `/Users/bobeenlee/Workspaces/Todo` as the `workspace` argument for `antigravity_start_task`; do not let a standalone product task default back to `hermes-remote-ops` or `hermes-workspace`.
+When delegating implementation for a new repo, Hermes must pass the approved repo workspace path to Antigravity. For example, use `/Users/bobeenlee/Workspaces/Todo` as the `workspace` argument for `antigravity_start_task`; do not let a standalone product task default back to `hermes-workspace`.
 
 ## Forbidden Outputs
 

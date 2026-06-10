@@ -1,9 +1,9 @@
-# Hermes Remote Ops Context
+# Hermes Workspace Context
 
 ## Language
 
-**Hermes remote ops**:
-The operating model for managing the Hermes MacBook from a Control MacBook over an approved SSH/Tailscale path. It includes diagnosis, gateway operations, computer_use setup, Kanban setup, incident triage, and workspace lifecycle work.
+**Hermes workspace**:
+The operating model and canonical repo for managing the Hermes MacBook from a Control MacBook over an approved SSH/Tailscale path. It includes diagnosis, gateway operations, computer_use setup, Kanban setup, incident triage, and workspace lifecycle work.
 _Avoid_: generic automation repo, one-off SSH scripts
 
 **Control MacBook**:

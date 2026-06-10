@@ -38,7 +38,7 @@ If the user asks for a standalone service, product, app, site, or tool that shou
 
 After explicit approval, Hermes may create the repo/workspace and then delegate repo-local implementation to Antigravity. Repo creation, deployment setup, provider configuration, and delegated implementation all remain `review-required`.
 
-For standalone repos, Hermes must pass the approved repo workspace path to `antigravity_start_task` using the `workspace` argument. Do not let the worker default to `hermes-remote-ops` or `hermes-workspace` for a different product repo.
+For standalone repos, Hermes must pass the approved repo workspace path to `antigravity_start_task` using the `workspace` argument. Do not let the worker default to `hermes-workspace` for a different product repo.
 
 ## Required Flow
 

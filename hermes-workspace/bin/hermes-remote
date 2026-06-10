@@ -16,7 +16,7 @@ fi
 : "${HERMES_BIN:=$HERMES_REMOTE_HOME/.local/bin/hermes}"
 : "${CUA_BIN:=$HERMES_REMOTE_HOME/.local/bin/cua-driver}"
 : "${HERMES_CONFIG:=$HERMES_REMOTE_HOME/.hermes/config.yaml}"
-: "${HERMES_REMOTE_WORKSPACE:=$HERMES_REMOTE_HOME/Workspaces/hermes-remote-ops}"
+: "${HERMES_REMOTE_WORKSPACE:=$HERMES_REMOTE_HOME/Workspaces/hermes-workspace}"
 : "${ANTIGRAVITY_BIN:=$HERMES_REMOTE_HOME/.local/bin/agy}"
 : "${ANTIGRAVITY_ARTIFACT_ROOT:=$HERMES_REMOTE_WORKSPACE/artifacts/antigravity}"
 : "${TMUX_BIN:=tmux}"

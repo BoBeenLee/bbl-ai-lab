@@ -6,7 +6,7 @@ import path from "node:path";
 import process from "node:process";
 
 const home = process.env.HOME || "/Users/bobeenlee";
-const defaultWorkspace = process.env.HERMES_REMOTE_WORKSPACE || path.join(home, "Workspaces", "hermes-remote-ops");
+const defaultWorkspace = process.env.HERMES_REMOTE_WORKSPACE || path.join(home, "Workspaces", "hermes-workspace");
 const workspacesRoot = path.join(home, "Workspaces");
 const agyBin = process.env.ANTIGRAVITY_BIN || path.join(home, ".local", "bin", "agy");
 const tmuxBin = process.env.TMUX_BIN || "tmux";
@@ -20,7 +20,7 @@ const tools = [
     inputSchema: {
       type: "object",
       properties: {
-        workspace: { type: "string", description: "Optional target git workspace. Defaults to the Hermes remote ops workspace." },
+        workspace: { type: "string", description: "Optional target git workspace. Defaults to the Hermes workspace." },
       },
       additionalProperties: false,
     },

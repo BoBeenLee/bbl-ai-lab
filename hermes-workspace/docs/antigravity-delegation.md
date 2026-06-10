@@ -4,11 +4,11 @@ Antigravity delegated implementation lets Hermes call Antigravity CLI as an impl
 
 ## Operating Model
 
-- Hermes starts from the canonical remote workspace: `/Users/bobeenlee/Workspaces/hermes-remote-ops`.
+- Hermes starts from the canonical remote workspace: `/Users/bobeenlee/Workspaces/hermes-workspace`.
 - `bin/hermes-remote antigravity-run` creates an isolated git worktree and branch.
 - v2 registers `antigravity-worker` as a Hermes MCP stdio server.
 - The MCP worker creates an isolated git worktree and branch, then runs Antigravity CLI as a repo-local implementation worker.
-- The MCP worker defaults to the Hermes remote ops workspace, but standalone product repos must pass an explicit `workspace` argument such as `/Users/bobeenlee/Workspaces/Todo`.
+- The MCP worker defaults to the Hermes workspace, but standalone product repos must pass an explicit `workspace` argument such as `/Users/bobeenlee/Workspaces/Todo`.
 - Hermes must verify the returned `workspace` and `gitRoot` before treating delegated output as relevant to the requested repo.
 - The default MCP execution mode is `print`, because it is non-interactive and avoids first-run TUI setup screens. `tmux` remains available for manual v1 sessions and explicit MCP requests.
 - Session names follow `antigravity-<YYYYMMDD-HHMMSS>-<slug>`.

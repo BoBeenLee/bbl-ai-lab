@@ -1,4 +1,4 @@
-# Hermes Remote Ops
+# Hermes Workspace
 
 Operator repo for managing a Hermes Agent on a remote Mac over SSH/Tailscale.
 
@@ -21,14 +21,14 @@ bin/hermes-remote status
 The canonical remote workspace for Hermes work is:
 
 ```text
-/Users/bobeenlee/Workspaces/hermes-remote-ops
+/Users/bobeenlee/Workspaces/hermes-workspace
 ```
 
 Hermes should use this config shape:
 
 ```yaml
 terminal:
-  cwd: "/Users/bobeenlee/Workspaces/hermes-remote-ops"
+  cwd: "/Users/bobeenlee/Workspaces/hermes-workspace"
 
 worktree: true
 ```
