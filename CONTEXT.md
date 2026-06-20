@@ -26,16 +26,6 @@ _Avoid_: 예외 이벤트
 하나의 top-level Telegram command 아래 여러 action을 두는 automation flow. 형식은 `/command subcommand body`이며, 각 subcommand가 별도 event type과 flow adapter files를 가진다. 예: 예정된 `/recruit collect`.
 _Avoid_: nested command, 하위 명령
 
-**Control MacBook**:
-Codex Desktop session이 실행되는 작업자 측 MacBook. 대상 기기에 SSH 또는 화면 공유로 접속해 구축 작업을 수행하는 진입점이다.
-_Avoid_: 맥북 클로드, 로컬 맥북
-
-**Hermes MacBook**:
-Hermes agent를 설치·운영할 대상 MacBook. 이 plan에서는 `BoBeenui-MacBookPro.local` 역할의 회사 지급 MacBook을 가리킨다.
-_Avoid_: 다른 맥북, 대상 기기
-
-**Hermes agent**:
-Hermes MacBook에서 설치·검증할 NousResearch/hermes-agent 기반 자동화 에이전트. 공식 per-user layout (`~/.hermes/hermes-agent`, `~/.hermes`, `~/.local/bin/hermes`)을 따른다.
-
-**Approved remote access path**:
-회사 장비 보안 정책을 우회하지 않는 원격 접속 경로. 이 plan에서는 같은 신뢰 네트워크 안의 SSH 키 인증을 우선하며, 개인 Tailscale 같은 overlay network는 회사 승인 전에는 사용하지 않는다.
+**Operator workspace submodule**:
+이 저장소의 Telegram/GitHub Actions automation flow와 분리된 운영 도구 repo를 가리키는 git submodule. 예: `hermes-workspace`는 remote Hermes 운영 runbook, scripts, artifacts의 owner이며, 이 hub repo는 submodule pointer와 얇은 안내만 관리한다.
+_Avoid_: flow adapter script와 운영 host script를 같은 `scripts/` owner로 취급하기

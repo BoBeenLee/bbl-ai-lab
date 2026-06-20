@@ -39,6 +39,7 @@ This runs TypeScript checking and verifies manifest drift against workflow `repo
 - Gemini prompts: `scripts/prompts/<flow>-<action>.md`
 - Flow docs: `docs/<flow>-<action>.md`
 - Skill context attached by Actions: `skills/*.SKILL.md`
+- Operator tooling that is not a Telegram/GitHub Actions flow belongs in the relevant submodule, such as `hermes-workspace/`, not in this repo's top-level `scripts/`.
 
 ## Documentation Rules
 
@@ -49,7 +50,7 @@ This runs TypeScript checking and verifies manifest drift against workflow `repo
 
 ## Safety Rules
 
-- Never commit secrets, OAuth credentials, Telegram bot tokens, GitHub tokens, SSH keys, `.env` files, or remote Hermes secrets.
+- Never commit secrets, OAuth credentials, Telegram bot tokens, GitHub tokens, SSH keys, `.env` files, or remote operator workspace secrets.
 - Keep `worker/wrangler.toml` free of secrets; use `wrangler secret put` for sensitive values.
 - Do not remove generated or local worktree directories unless the user explicitly asks.
 - Existing untracked files may belong to the user. Stage only intentional files when asked to commit.

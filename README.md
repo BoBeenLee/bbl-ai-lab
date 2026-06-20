@@ -12,6 +12,10 @@
 
 에이전트가 이 저장소를 수정할 때는 [AGENTS.md](AGENTS.md)의 flow registry 규칙을 먼저 따른다.
 
+## 운영 workspace submodule
+
+Hermes 원격 운영 runbook, host 진단/설치 스크립트, Discord/Camofox helper, 운영 artifact는 이 hub repo가 아니라 [hermes-workspace](hermes-workspace/) submodule에서 관리한다. 이 저장소는 Telegram → Worker → GitHub Actions automation flow를 owner로 유지하고, Hermes 관련 실작업은 `hermes-workspace` repo에서 변경한다.
+
 ## 계획 관리 (`docs/plans/`)
 
 idea 이슈가 만들어진 다음 단계인 **계획 명세화**는 클로드 데스크탑/로컬에서 사람이 직접 진행한다. 산출물은 `docs/plans/<issue#>-<slug>.md` 로 PR 적재되고, 보강이 필요하면 같은 파일에 새 PR (revision) 을 올린다. `.github/workflows/plan-link-back.yml` 가 PR open/merge 시 연결 이슈에 자동 코멘트와 `has-plan` 라벨을 부착하고, `status: shipped` 면 이슈를 close 한다.
@@ -55,6 +59,7 @@ idea 이슈가 만들어진 다음 단계인 **계획 명세화**는 클로드 �
 │       └── <flow>-<action>.md       ← Gemini 시스템 프롬프트
 ├── skills/
 │   └── *.SKILL.md                   ← Gemini에 attach할 skill 컨텍스트
+├── hermes-workspace/                ← Hermes 운영 repo submodule
 ├── worker/                          ← Cloudflare Worker (멀티 flow 라우터)
 │   ├── src/flows.ts                 ←   flow manifest가 단일 진실원
 │   ├── src/index.ts                 ←   manifest를 읽어 Telegram webhook 라우팅
