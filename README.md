@@ -12,6 +12,16 @@
 
 에이전트가 이 저장소를 수정할 때는 [AGENTS.md](AGENTS.md)의 flow registry 규칙을 먼저 따른다.
 
+## OKF 지식 번들 (`knowledge/`)
+
+[knowledge/](knowledge/)는 이 저장소의 Open Knowledge Format 지식 번들이다. `README.md`와 `docs/`는 사람용 운영 문서로 유지하고, `knowledge/`는 에이전트가 개념과 flow 관계를 안정적으로 순회할 수 있는 Markdown + YAML frontmatter 계층으로 관리한다.
+
+새 flow나 load-bearing 개념을 추가하면 기존 운영 문서와 함께 다음도 갱신한다:
+
+- `knowledge/flows/<flow>-<action>.md` — flow concept 문서
+- `knowledge/concepts/<concept>.md` — 새 프로젝트 개념이 생긴 경우
+- `knowledge/log.md` — OKF bundle의 의미 있는 변경 이력
+
 ## 운영 workspace submodule
 
 Hermes 원격 운영 runbook, host 진단/설치 스크립트, Discord/Camofox helper, 운영 artifact는 이 hub repo가 아니라 [hermes-workspace](hermes-workspace/) submodule에서 관리한다. 이 저장소는 Telegram → Worker → GitHub Actions automation flow를 owner로 유지하고, Hermes 관련 실작업은 `hermes-workspace` repo에서 변경한다.
@@ -59,6 +69,7 @@ idea 이슈가 만들어진 다음 단계인 **계획 명세화**는 클로드 �
 │       └── <flow>-<action>.md       ← Gemini 시스템 프롬프트
 ├── skills/
 │   └── *.SKILL.md                   ← Gemini에 attach할 skill 컨텍스트
+├── knowledge/                       ← OKF 지식 번들 (agent-consumable concepts)
 ├── hermes-workspace/                ← Hermes 운영 repo submodule
 ├── worker/                          ← Cloudflare Worker (멀티 flow 라우터)
 │   ├── src/flows.ts                 ←   flow manifest가 단일 진실원
@@ -102,9 +113,10 @@ idea 이슈가 만들어진 다음 단계인 **계획 명세화**는 클로드 �
 3. **스크립트 / 프롬프트 추가**: `scripts/meeting-summarize.sh`, `scripts/prompts/meeting-summarize.md`.
 4. **(선택) skill 컨텍스트 추가**: `skills/<name>.SKILL.md`.
 5. **상세 문서 작성**: `docs/meeting-summarize.md` (flow 개요, 트리거, 환경변수, 출력, 검증). 위 [등록된 flow](#등록된-flow) 표에 한 줄 추가.
-6. **검증**: `cd worker && npm run typecheck`. 이 명령은 TypeScript와 함께 manifest가 가리키는 workflow/script/prompt/docs 파일 존재 여부, workflow `repository_dispatch.types`, legacy event type 예외를 검사한다.
-7. **Worker 재배포**: `cd worker && npx wrangler deploy`.
-8. **(선택) BotFather `/setcommands`** 에 새 명령어 등록.
+6. **OKF concept 작성**: `knowledge/flows/meeting-summarize.md`에 `type: Automation Flow` frontmatter와 adapter 링크를 추가.
+7. **검증**: `cd worker && npm run typecheck`. 이 명령은 TypeScript와 함께 manifest가 가리키는 workflow/script/prompt/docs 파일 존재 여부, workflow `repository_dispatch.types`, legacy event type 예외를 검사한다.
+8. **Worker 재배포**: `cd worker && npx wrangler deploy`.
+9. **(선택) BotFather `/setcommands`** 에 새 명령어 등록.
 
 ## 공통 인프라 셋업
 

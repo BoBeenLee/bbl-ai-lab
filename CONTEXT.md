@@ -29,3 +29,11 @@ _Avoid_: nested command, 하위 명령
 **Operator workspace submodule**:
 이 저장소의 Telegram/GitHub Actions automation flow와 분리된 운영 도구 repo를 가리키는 git submodule. 예: `hermes-workspace`는 remote Hermes 운영 runbook, scripts, artifacts의 owner이며, 이 hub repo는 submodule pointer와 얇은 안내만 관리한다.
 _Avoid_: flow adapter script와 운영 host script를 같은 `scripts/` owner로 취급하기
+
+**Knowledge bundle**:
+`knowledge/` 아래에 있는 Open Knowledge Format 문서 묶음. 사람용 운영 문서(`README.md`, `docs/`)를 대체하지 않고, 에이전트가 프로젝트 개념과 flow 관계를 안정적으로 순회하도록 돕는 agent-consumable 지식 계층이다.
+_Avoid_: README 사본, docs 전체 복제본
+
+**Concept**:
+Knowledge bundle 안의 단일 지식 단위. 하나의 Markdown 파일로 표현되며 YAML frontmatter의 `type`으로 종류를 밝히고, 본문에서 관련 source 문서나 flow로 연결한다.
+_Avoid_: 임의 문서 조각, 섹션 하나

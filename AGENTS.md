@@ -46,6 +46,9 @@ This runs TypeScript checking and verifies manifest drift against workflow `repo
 - Update `README.md` when the repository operating model, setup flow, or user-facing flow list changes.
 - Update `CONTEXT.md` when a new project term becomes load-bearing for future plans or code reviews.
 - Update `docs/<flow>-<action>.md` when a specific flow's trigger, environment, output, or verification changes.
+- Update `knowledge/flows/<flow>-<action>.md` when an automation flow is added or its relationships change.
+- Update `knowledge/concepts/` when a load-bearing project concept is added or materially redefined.
+- Keep every `knowledge/**/*.md` file in Open Knowledge Format style: YAML frontmatter at the top with `type` required; prefer `title`, `description`, `resource`, `tags`, and `timestamp` when available.
 - Update `docs/plans/README.md` only when the plan document workflow changes.
 
 ## Safety Rules
@@ -71,3 +74,10 @@ bash -n scripts/<changed-script>.sh
 ```
 
 For docs-only changes, inspect the diff and make sure links/paths still match the manifest.
+
+For OKF knowledge bundle changes:
+
+```bash
+rg -n "^type:" knowledge
+find knowledge -name "*.md" | sort
+```
