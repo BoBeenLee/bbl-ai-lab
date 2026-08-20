@@ -1,6 +1,3 @@
-[submodule ".agents/marketingskills"]
-	path = .agents/marketingskills
-	url = https://github.com/coreyhaines31/marketingskills.git
 [submodule "ops/remote-comfyui"]
 	path = ops/remote-comfyui
 	url = https://github.com/BoBeenLee/remote-comfyui.git
