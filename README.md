@@ -26,6 +26,14 @@
 
 Hermes 원격 운영 runbook, host 진단/설치 스크립트, Discord/Camofox helper, 운영 artifact는 이 hub repo가 아니라 [hermes-workspace](hermes-workspace/) submodule에서 관리한다. 이 저장소는 Telegram → Worker → GitHub Actions automation flow를 owner로 유지하고, Hermes 관련 실작업은 `hermes-workspace` repo에서 변경한다.
 
+DGX Spark 작업은 종류에 상관없이 `hermes-workspace/knowledge/runbooks/dgx-spark-remote-access.md`의 DGX Doc Map에서 시작한다. 문서 소유는 아래처럼 갈린다.
+
+| 대상 | owner |
+| --- | --- |
+| 호스트/OS, SSH·Tailscale, 원격 데스크톱, 종료, DGX Dashboard, 로컬 LLM 서비스 | [hermes-workspace](hermes-workspace/) `knowledge/runbooks/dgx-spark-remote-access.md` |
+| ComfyUI 서비스 내부, 모델 디렉터리, `comfyops` 계정, ops CLI | [ops/remote-comfyui](ops/remote-comfyui/) `references/dgx-comfyui.md` |
+| ComfyUI 워크플로, 모델 권고, 실행 산출물 | [ops/remote-comfyui](ops/remote-comfyui/) `docs/`, `knowledge/` |
+
 ## 계획 관리 (`docs/plans/`)
 
 idea 이슈가 만들어진 다음 단계인 **계획 명세화**는 클로드 데스크탑/로컬에서 사람이 직접 진행한다. 산출물은 `docs/plans/<issue#>-<slug>.md` 로 PR 적재되고, 보강이 필요하면 같은 파일에 새 PR (revision) 을 올린다. `.github/workflows/plan-link-back.yml` 가 PR open/merge 시 연결 이슈에 자동 코멘트와 `has-plan` 라벨을 부착하고, `status: shipped` 면 이슈를 close 한다.
