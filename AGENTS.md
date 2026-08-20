@@ -39,7 +39,7 @@ This runs TypeScript checking and verifies manifest drift against workflow `repo
 - Gemini prompts: `scripts/prompts/<flow>-<action>.md`
 - Flow docs: `docs/<flow>-<action>.md`
 - Skill context attached by Actions: `skills/*.SKILL.md`
-- Operator tooling that is not a Telegram/GitHub Actions flow belongs in the relevant submodule, such as `hermes-workspace/`, not in this repo's top-level `scripts/`.
+- Operator tooling that is not a Telegram/GitHub Actions flow belongs in the relevant submodule, such as `hermes-workspace/` or `ops/remote-comfyui/`, not in this repo's top-level `scripts/`.
 
 ## Documentation Rules
 
