@@ -25,17 +25,20 @@ repository_dispatch event_type: **`idea-submitted`**.
   ▼
 [GitHub Action: idea-elaborate.yml]
   │ ① actions/checkout, setup-node
-  │ ② Gemini OAuth credentials 복원 (~/.gemini/oauth_creds.json)
-  │ ③ npm install -g @google/gemini-cli
-  │ ④ scripts/idea-elaborate.sh 실행
+  │ ② pip install yt-dlp trafilatura youtube-transcript-api (URL 추출용)
+  │ ③ Gemini OAuth credentials 복원 (~/.gemini/oauth_creds.json)
+  │ ④ npm install -g @google/gemini-cli
+  │ ⑤ scripts/idea-elaborate.sh 실행
   ▼
 scripts/idea-elaborate.sh
-  │ ① prompts/idea-elaborate.md + skills/office-hours.SKILL.md + 사용자 원문 합성
-  │ ② gemini --yolo -m <GEMINI_MODEL> -p "<합성 프롬프트>"
-  │ ③ 출력에서 JSON 추출 (python re, fenced/bare 양쪽 지원)
-  │ ④ jq로 마크다운 본문 생성
-  │ ⑤ gh issue create --label idea[,needs-clarification]
-  │ ⑥ Telegram sendMessage로 issue URL 회신
+  │ ① 본문에서 URL 감지 → fetch-url-content.py (실패해도 계속 진행)
+  │ ② prompts/idea-elaborate.md + skills/product-brainstorming.SKILL.md
+  │      + 사용자 원문 + (있으면) fetched content 합성
+  │ ③ gemini --yolo -m <GEMINI_MODEL> -p "<합성 프롬프트>" (실패 시 1회 재시도)
+  │ ④ 출력에서 JSON 추출 (python re, fenced/bare 양쪽 지원)
+  │ ⑤ jq로 마크다운 본문 생성
+  │ ⑥ gh issue create --label idea[,needs-clarification]
+  │ ⑦ Telegram sendMessage로 issue URL 회신
   ▼
 [GitHub Issue: 요약/문제/목표/접근/리스크/Open Questions/Next Actions]
 ```
@@ -47,8 +50,9 @@ scripts/idea-elaborate.sh
 | [.github/workflows/idea-elaborate.yml](../.github/workflows/idea-elaborate.yml) | repository_dispatch + workflow_dispatch 트리거. Gemini OAuth 부트스트랩 + `idea-elaborate.sh` 호출 |
 | [scripts/idea-elaborate.sh](../scripts/idea-elaborate.sh) | 본 처리 스크립트 |
 | [scripts/prompts/idea-elaborate.md](../scripts/prompts/idea-elaborate.md) | Gemini 시스템 프롬프트 + 출력 JSON 스키마 |
-| [skills/office-hours.SKILL.md](../skills/office-hours.SKILL.md) | brainstorming 컨텍스트 (gstack/office-hours 출처) |
-| [worker/src/index.ts](../worker/src/index.ts) | `commands: ["idea","todo"]` → `eventType: "idea-submitted"` 매핑 |
+| [scripts/fetch-url-content.py](../scripts/fetch-url-content.py) | 본문 속 URL 내용 추출 (yt-dlp / trafilatura / youtube-transcript-api) |
+| [skills/product-brainstorming.SKILL.md](../skills/product-brainstorming.SKILL.md) | brainstorming 컨텍스트 (anthropics/knowledge-work-plugins 출처). `SKILL_FILE` env 로 교체 가능 |
+| [worker/src/flows.ts](../worker/src/flows.ts) | `commands: ["idea","todo"]` → `eventType: "idea-submitted"` 매핑 (flow manifest) |
 
 ## 환경변수 / 시크릿
 
