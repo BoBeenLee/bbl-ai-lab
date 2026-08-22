@@ -19,6 +19,7 @@ This directory is the Open Knowledge Format bundle for `bbl-ai-lab`.
 - [Flow registry](concepts/flow-registry.md)
 - [Flow adapter files](concepts/flow-adapter-files.md)
 - [Operator workspace repo](concepts/operator-workspace-repo.md)
+- [Autonomous loop](concepts/autonomous-loop.md)
 
 # Flows
 
@@ -35,3 +36,5 @@ This directory is the Open Knowledge Format bundle for `bbl-ai-lab`.
 - [Agent guide](../AGENTS.md)
 - [Plan workflow guide](../docs/plans/README.md)
 - [Flow manifest](../worker/src/flows.ts)
+- [Loop manifest](../LOOP.md)
+- [Loop safety denylist](../docs/safety.md)
