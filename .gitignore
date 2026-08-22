@@ -33,3 +33,8 @@ __pycache__/
 
 ### Local scratch
 .tmp/
+
+### 운영 repo (ops/repo-sync.sh 로 클론, 이 repo가 추적하지 않음)
+/hermes-workspace/
+/ops/remote-comfyui/
+/ops/openhuman-altalt-proxy/

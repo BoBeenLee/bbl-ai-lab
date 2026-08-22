@@ -22,9 +22,21 @@
 - `knowledge/concepts/<concept>.md` — 새 프로젝트 개념이 생긴 경우
 - `knowledge/log.md` — OKF bundle의 의미 있는 변경 이력
 
-## 운영 workspace submodule
+## 운영 repo
 
-Hermes 원격 운영 runbook, host 진단/설치 스크립트, Discord/Camofox helper, 운영 artifact는 이 hub repo가 아니라 [hermes-workspace](hermes-workspace/) submodule에서 관리한다. 이 저장소는 Telegram → Worker → GitHub Actions automation flow를 owner로 유지하고, Hermes 관련 실작업은 `hermes-workspace` repo에서 변경한다.
+Hermes 원격 운영 runbook, host 진단/설치 스크립트, Discord/Camofox helper, 운영 artifact는 이 hub repo가 아니라 [hermes-workspace](hermes-workspace/) 같은 별도 운영 repo에서 관리한다. 이 저장소는 Telegram → Worker → GitHub Actions automation flow를 owner로 유지하고, Hermes 관련 실작업은 `hermes-workspace` repo에서 변경한다.
+
+운영 repo는 submodule이 아니다. hub는 [ops/repos.md](ops/repos.md) manifest에 URL과 브랜치만 가지고 있고, 실제 체크아웃은 각자 설치한다. 하위 repo에 커밋이 생겨도 hub에 포인터 커밋을 만들 필요가 없다.
+
+```bash
+bash ops/repo-sync.sh
+```
+
+| path | repo |
+| --- | --- |
+| `hermes-workspace/` | [BoBeenLee/hermes-workspace](https://github.com/BoBeenLee/hermes-workspace) |
+| `ops/remote-comfyui/` | [BoBeenLee/remote-comfyui](https://github.com/BoBeenLee/remote-comfyui) |
+| `ops/openhuman-altalt-proxy/` | [BoBeenLee/openhuman-altalt-proxy](https://github.com/BoBeenLee/openhuman-altalt-proxy) |
 
 DGX Spark 작업은 종류에 상관없이 `hermes-workspace/knowledge/runbooks/dgx-spark-remote-access.md`의 DGX Doc Map에서 시작한다. 문서 소유는 아래처럼 갈린다.
 
@@ -78,7 +90,12 @@ idea 이슈가 만들어진 다음 단계인 **계획 명세화**는 클로드 �
 ├── skills/
 │   └── *.SKILL.md                   ← Gemini에 attach할 skill 컨텍스트
 ├── knowledge/                       ← OKF 지식 번들 (agent-consumable concepts)
-├── hermes-workspace/                ← Hermes 운영 repo submodule
+├── ops/
+│   ├── repos.md                     ← 운영 repo manifest (URL/브랜치 단일 진실원)
+│   ├── repo-sync.sh                 ←   manifest를 읽어 미설치 repo만 클론
+│   ├── remote-comfyui/              ←   clone, git 미추적
+│   └── openhuman-altalt-proxy/      ←   clone, git 미추적
+├── hermes-workspace/                ← Hermes 운영 repo clone, git 미추적
 ├── worker/                          ← Cloudflare Worker (멀티 flow 라우터)
 │   ├── src/flows.ts                 ←   flow manifest가 단일 진실원
 │   ├── src/index.ts                 ←   manifest를 읽어 Telegram webhook 라우팅

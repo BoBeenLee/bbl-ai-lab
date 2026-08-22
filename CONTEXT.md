@@ -26,9 +26,13 @@ _Avoid_: 예외 이벤트
 하나의 top-level Telegram command 아래 여러 action을 두는 automation flow. 형식은 `/command subcommand body`이며, 각 subcommand가 별도 event type과 flow adapter files를 가진다. 예: 예정된 `/recruit collect`.
 _Avoid_: nested command, 하위 명령
 
-**Operator workspace submodule**:
-이 저장소의 Telegram/GitHub Actions automation flow와 분리된 운영 도구 repo를 가리키는 git submodule. 예: `hermes-workspace`는 remote Hermes 운영 runbook, scripts, artifacts의 owner이며, 이 hub repo는 submodule pointer와 얇은 안내만 관리한다.
-_Avoid_: flow adapter script와 운영 host script를 같은 `scripts/` owner로 취급하기
+**Operator workspace repo**:
+이 저장소의 Telegram/GitHub Actions automation flow와 분리된 별도 운영 도구 repo. 예: `hermes-workspace`는 remote Hermes 운영 runbook, scripts, artifacts의 owner이며, 이 hub repo는 `ops/repos.md` manifest에 URL과 브랜치만 등록하고 `ops/repo-sync.sh`가 지정된 path에 클론한다. 체크아웃 내용은 hub가 추적하지 않는다.
+_Avoid_: git submodule, gitlink 포인터 커밋, flow adapter script와 운영 host script를 같은 `scripts/` owner로 취급하기
+
+**Operator repo manifest**:
+`ops/repos.md`의 YAML frontmatter. operator workspace repo의 `name`, `url`, `path`, `branch`를 모아둔 단일 진실원이며 `ops/repo-sync.sh`가 유일한 소비자다.
+_Avoid_: README에 URL 중복 기재, .gitmodules
 
 **Knowledge bundle**:
 `knowledge/` 아래에 있는 Open Knowledge Format 문서 묶음. 사람용 운영 문서(`README.md`, `docs/`)를 대체하지 않고, 에이전트가 프로젝트 개념과 flow 관계를 안정적으로 순회하도록 돕는 agent-consumable 지식 계층이다.
