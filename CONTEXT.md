@@ -41,3 +41,15 @@ _Avoid_: README 사본, docs 전체 복제본
 **Concept**:
 Knowledge bundle 안의 단일 지식 단위. 하나의 Markdown 파일로 표현되며 YAML frontmatter의 `type`으로 종류를 밝히고, 본문에서 관련 source 문서나 flow로 연결한다.
 _Avoid_: 임의 문서 조각, 섹션 하나
+
+**Autonomous loop**:
+사람이 매 턴 프롬프트를 넣지 않고, 정해진 주기마다 스스로 관측·판단·기록하는 에이전트 실행 단위. 이 저장소에서는 Claude Code의 `/loop`이 엔진이고 `LOOP.md`가 어떤 루프가 어떤 주기로 도는지의 단일 진실원이다. Telegram command로 시작하는 automation flow와 달리 트리거가 사람이 아니라 스케줄이다.
+_Avoid_: 크론잡, 자동화 스크립트, automation flow와 동일 취급
+
+**Loop state spine**:
+`STATE.md`. 루프가 매 실행 시작에 읽고 끝에 쓰는 유일한 상태 파일. High Priority, Watch List, Recent Noise 세 구획과 마지막 실행 시각을 가진다. 대화 로그를 읽지 않고도 루프가 지금 무엇을 들고 있는지 사람이 확인하는 지점이다.
+_Avoid_: 채팅 히스토리, 실행 로그(`loop-run-log.md`)와 혼용
+
+**Loop readiness level**:
+루프에 허용된 자율성 등급. L1은 보고만 하고 아무것도 고치지 않으며, L2는 검증자 승인 하에 작은 수정을 하고, L3은 명시적 gate를 두고 넓게 행동한다. 현재 이 저장소의 daily triage 루프는 L1이다.
+_Avoid_: 신뢰도, 단계

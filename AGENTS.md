@@ -12,6 +12,7 @@ Use these files as the source of truth:
 - `README.md` for the public operating model and setup.
 - `docs/plans/README.md` for plan document workflow.
 - `worker/src/flows.ts` for automation flow registration.
+- `LOOP.md` for which autonomous loops run, and `docs/safety.md` for their denylist.
 
 ## Flow Registry Rules
 
@@ -41,6 +42,18 @@ This runs TypeScript checking and verifies manifest drift against workflow `repo
 - Skill context attached by Actions: `skills/*.SKILL.md`
 - Operator tooling that is not a Telegram/GitHub Actions flow belongs in the relevant operator repo, such as `hermes-workspace/` or `ops/remote-comfyui/`, not in this repo's top-level `scripts/`.
 - Operator repos are cloned, not submodules. `ops/repos.md` is the single manifest for their URL, branch, and install path; `ops/repo-sync.sh` reads it. Adding or moving an operator repo means editing the manifest and `.gitignore` together.
+
+## Loop Rules
+
+Autonomous loops are scheduled, not Telegram-triggered, so they take no
+`worker/src/flows.ts` entry. See `knowledge/concepts/autonomous-loop.md`.
+
+- Treat `LOOP.md` as the single manifest for which loops run, at what cadence, and at what readiness level.
+- `docs/safety.md` is the binding denylist. A loop that would touch a listed path escalates instead of editing.
+- A loop reads `STATE.md` at the start of every run and writes outcomes there at the end. Escalation means a `needs-human` item under High Priority, not a new issue.
+- The implementer never marks its own work done. `goal-verifier` or the `loop-verifier` agent decides.
+- Do not raise a loop above L1 while `loop-run-log.md` has no clean run history.
+- Loop skills live as real directories in `.claude/skills/`, not as `.agents/skills/` symlinks, because `skills-lock.json` only tracks skills the external installer placed.
 
 ## Documentation Rules
 
@@ -83,6 +96,12 @@ bash ops/repo-sync.sh --list
 This parses `ops/repos.md` and fails if any entry is missing a name, url, path, or branch.
 
 For docs-only changes, inspect the diff and make sure links/paths still match the manifest.
+
+For loop scaffolding changes:
+
+```bash
+npx @cobusgreyling/loop audit .
+```
 
 For OKF knowledge bundle changes:
 
