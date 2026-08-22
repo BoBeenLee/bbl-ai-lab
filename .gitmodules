@@ -1,9 +1,0 @@
-[submodule "ops/remote-comfyui"]
-	path = ops/remote-comfyui
-	url = https://github.com/BoBeenLee/remote-comfyui.git
-[submodule "hermes-workspace"]
-	path = hermes-workspace
-	url = https://github.com/BoBeenLee/hermes-workspace.git
-[submodule "ops/openhuman-altalt-proxy"]
-	path = ops/openhuman-altalt-proxy
-	url = https://github.com/BoBeenLee/openhuman-altalt-proxy.git

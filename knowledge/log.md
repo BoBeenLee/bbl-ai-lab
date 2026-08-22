@@ -9,6 +9,11 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 # Log
 
+## 2026-08-22
+
+- Replaced the three operator submodules with manifest-driven clones: `ops/repos.md` plus `ops/repo-sync.sh`.
+- Renamed the `Operator workspace submodule` concept to [Operator workspace repo](concepts/operator-workspace-repo.md).
+
 ## 2026-06-27
 
 - Created the initial OKF knowledge bundle.

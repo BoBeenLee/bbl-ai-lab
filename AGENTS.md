@@ -39,7 +39,8 @@ This runs TypeScript checking and verifies manifest drift against workflow `repo
 - Gemini prompts: `scripts/prompts/<flow>-<action>.md`
 - Flow docs: `docs/<flow>-<action>.md`
 - Skill context attached by Actions: `skills/*.SKILL.md`
-- Operator tooling that is not a Telegram/GitHub Actions flow belongs in the relevant submodule, such as `hermes-workspace/` or `ops/remote-comfyui/`, not in this repo's top-level `scripts/`.
+- Operator tooling that is not a Telegram/GitHub Actions flow belongs in the relevant operator repo, such as `hermes-workspace/` or `ops/remote-comfyui/`, not in this repo's top-level `scripts/`.
+- Operator repos are cloned, not submodules. `ops/repos.md` is the single manifest for their URL, branch, and install path; `ops/repo-sync.sh` reads it. Adding or moving an operator repo means editing the manifest and `.gitignore` together.
 
 ## Documentation Rules
 
@@ -72,6 +73,14 @@ For shell script changes:
 ```bash
 bash -n scripts/<changed-script>.sh
 ```
+
+For operator repo manifest changes:
+
+```bash
+bash ops/repo-sync.sh --list
+```
+
+This parses `ops/repos.md` and fails if any entry is missing a name, url, path, or branch.
 
 For docs-only changes, inspect the diff and make sure links/paths still match the manifest.
 

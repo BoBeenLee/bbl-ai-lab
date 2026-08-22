@@ -18,7 +18,7 @@ This directory is the Open Knowledge Format bundle for `bbl-ai-lab`.
 - [Automation flow](concepts/automation-flow.md)
 - [Flow registry](concepts/flow-registry.md)
 - [Flow adapter files](concepts/flow-adapter-files.md)
-- [Operator workspace submodule](concepts/operator-workspace-submodule.md)
+- [Operator workspace repo](concepts/operator-workspace-repo.md)
 
 # Flows
 
