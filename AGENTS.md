@@ -42,6 +42,8 @@ This runs TypeScript checking and verifies manifest drift against workflow `repo
 - Skill context attached by Actions: `skills/*.SKILL.md`
 - Operator tooling that is not a Telegram/GitHub Actions flow belongs in the relevant operator repo, such as `hermes-workspace/` or `ops/remote-comfyui/`, not in this repo's top-level `scripts/`.
 - Operator repos are cloned, not submodules. `ops/repos.md` is the single manifest for their URL, branch, and install path; `ops/repo-sync.sh` reads it. Adding or moving an operator repo means editing the manifest and `.gitignore` together.
+- The same manifest also covers project repos, which live under `projects/` rather than `ops/`. `path` is resolved from the hub root, so it need not start with `ops/`. An operator repo owns operations for a remote host; a project repo owns a body of work that is not a Telegram/Actions flow — `projects/games` owns game-related agent skills. Both install the same way and neither is tracked by the hub.
+- A manifest repo may be private. `games` is, because it holds account data. Private entries need a `gh auth` session or `GIT_TOKEN=<pat>` to clone.
 
 ## Loop Rules
 

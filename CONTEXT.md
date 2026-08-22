@@ -30,6 +30,10 @@ _Avoid_: nested command, 하위 명령
 이 저장소의 Telegram/GitHub Actions automation flow와 분리된 별도 운영 도구 repo. 예: `hermes-workspace`는 remote Hermes 운영 runbook, scripts, artifacts의 owner이며, 이 hub repo는 `ops/repos.md` manifest에 URL과 브랜치만 등록하고 `ops/repo-sync.sh`가 지정된 path에 클론한다. 체크아웃 내용은 hub가 추적하지 않는다.
 _Avoid_: git submodule, gitlink 포인터 커밋, flow adapter script와 운영 host script를 같은 `scripts/` owner로 취급하기
 
+**Project repo**:
+`projects/` 아래에 매니페스트로 설치되는 별도 repo. operator workspace repo와 설치 방식은 같지만 소유 대상이 다르다 — operator repo는 원격 호스트의 운영을 소유하고, project repo는 Telegram/Actions flow가 아닌 작업 덩어리를 소유한다. 예: `projects/games`는 게임 관련 에이전트 스킬을 소유하며 개인 계정 데이터를 담기 때문에 private다.
+_Avoid_: operator workspace repo와 동일 취급, hub의 flow로 취급, `ops/` 아래 배치
+
 **Operator repo manifest**:
 `ops/repos.md`의 YAML frontmatter. operator workspace repo의 `name`, `url`, `path`, `branch`를 모아둔 단일 진실원이며 `ops/repo-sync.sh`가 유일한 소비자다.
 _Avoid_: README에 URL 중복 기재, .gitmodules
