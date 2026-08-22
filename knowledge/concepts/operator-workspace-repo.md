@@ -21,6 +21,17 @@ These repos are not git submodules. `ops/repos.md` holds only their `name`, `url
 bash ops/repo-sync.sh
 ```
 
+# Project repos
+
+The same manifest installs project repos, which live under `projects/` instead of
+`ops/`. `repo-sync.sh` resolves `path` from the hub root, so the prefix is free.
+
+The distinction is ownership, not mechanism. An operator repo owns operations for
+a remote host. A project repo owns a body of work that is not a Telegram to
+Actions flow. `projects/games` owns game-related agent skills and is private
+because it holds account data; private entries need a `gh auth` session or
+`GIT_TOKEN`.
+
 # Boundary
 
 - Flow adapter scripts belong in the hub repository's top-level `scripts/`.

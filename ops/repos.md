@@ -12,6 +12,10 @@ repositories:
     url: https://github.com/BoBeenLee/openhuman-altalt-proxy.git
     path: ops/openhuman-altalt-proxy
     branch: main
+  - name: games
+    url: https://github.com/BoBeenLee/games.git
+    path: projects/games
+    branch: main
 ---
 
 # 운영 repo 목록
@@ -29,3 +33,9 @@ bash ops/repo-sync.sh
 ## repo 추가
 
 이 파일의 frontmatter와 `.gitignore` 두 곳을 함께 고친다. `branch`를 생략하면 `main`으로 클론한다.
+`path`는 `ops/` 아래일 필요가 없다 — `repo-sync.sh`가 hub 루트 기준 임의 경로를 클론한다.
+
+## private repo
+
+`games`는 private다. 계정 로스터 같은 개인 데이터를 담기 때문이다. private repo는
+`gh auth` 세션이나 `GIT_TOKEN=<pat>` 없이는 클론되지 않는다.
