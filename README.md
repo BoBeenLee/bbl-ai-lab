@@ -1,35 +1,118 @@
 # bbl-ai-lab
 
-텔레그램 메시지를 입구로, Cloudflare Worker가 명령어별로 라우팅해 GitHub Actions를 트리거하고, 그 안에서 Gemini CLI가 산출물(Issue, 요약, 보고서 등)을 만들어 회신하는 **여러 자동화 flow를 prefix 단위로 쌓는 hub**.
+아이디어 한 줄을 던지면 GitHub Issue → grilling 라운드 → plan 문서까지 굴러가는 **자동화 허브**.
+트리거 표면은 세 가지(Telegram 메시지, 이슈 코멘트, PR)이고, 실행은 전부 GitHub Actions 안에서 Gemini CLI가 맡는다.
+여기에 사람이 프롬프트를 넣지 않아도 도는 **자율 루프(autonomous loop)** 레이어가 얹혀 있다.
 
-## 등록된 flow
+에이전트가 이 저장소를 수정할 때는 [AGENTS.md](AGENTS.md)를 먼저 읽는다.
 
-| 명령어 | flow | 결과 | 상세 |
-|--------|------|------|------|
-| `/idea`, `/todo` | `idea` | 아이디어를 구체화한 GitHub Issue 생성 | [docs/idea-elaborate.md](docs/idea-elaborate.md) |
+## 등록된 자동화
 
-> 새 flow를 추가하면 이 표에 한 줄, 그리고 `docs/<flow>-<action>.md`에 상세 문서를 더한다.
+| 트리거 | 자동화 | 결과 | 상세 |
+|--------|--------|------|------|
+| Telegram `/idea`, `/todo` | `idea-elaborate` | 아이디어를 구체화한 GitHub Issue 생성 (`idea` 라벨) | [docs/idea-elaborate.md](docs/idea-elaborate.md) |
+| 이슈 코멘트 `/grill [focus]` | `idea-grill-followup` | 이슈 본문 in-place 정제 + Open Questions 축소, 완료 시 `grilled` 라벨 | [docs/plans/README.md](docs/plans/README.md#라이프사이클) |
+| `docs/plans/**` 변경 PR | `plan-link-back` | 연결 이슈에 코멘트 + `has-plan` 라벨, `status: shipped`면 close | [docs/plans/README.md](docs/plans/README.md#자동-link-back) |
+| 스케줄 (`/loop`) | Daily Triage | `STATE.md`에 findings 기록 (L1 report-only) | [LOOP.md](LOOP.md) |
 
-에이전트가 이 저장소를 수정할 때는 [AGENTS.md](AGENTS.md)의 flow registry 규칙을 먼저 따른다.
+Telegram 명령어만 [worker/src/flows.ts](worker/src/flows.ts) manifest에 등록된다. 이슈/PR 트리거는 워크플로우 자신이 `on:` 으로 선언하고, 스케줄 루프는 [LOOP.md](LOOP.md)가 manifest다.
 
-## OKF 지식 번들 (`knowledge/`)
+> 새 Telegram flow를 추가하면 이 표에 한 줄, `docs/<flow>-<action>.md`에 상세 문서, `knowledge/flows/<flow>-<action>.md`에 OKF concept를 더한다.
 
-[knowledge/](knowledge/)는 이 저장소의 Open Knowledge Format 지식 번들이다. `README.md`와 `docs/`는 사람용 운영 문서로 유지하고, `knowledge/`는 에이전트가 개념과 flow 관계를 안정적으로 순회할 수 있는 Markdown + YAML frontmatter 계층으로 관리한다.
+## 아키텍처
 
-새 flow나 load-bearing 개념을 추가하면 기존 운영 문서와 함께 다음도 갱신한다:
+```
+[Telegram]  /idea <본문>
+   │
+   ▼
+[Cloudflare Worker: tg-automation-bridge]
+   │  X-Telegram-Bot-Api-Secret-Token 검증 → ALLOWED_CHAT_IDS 화이트리스트
+   │  worker/src/flows.ts manifest에서 command → eventType 매핑
+   │  POST /repos/<owner>/<repo>/dispatches
+   │
+   ├──────────────┐
+   ▼              │            [이슈 코멘트 /grill]      [PR: docs/plans/**]
+[idea-elaborate]  │                     │                        │
+   │              │                     ▼                        ▼
+   │              │            [idea-grill-followup]      [plan-link-back]
+   │              │                     │                        │
+   │  Gemini OAuth 복원 → gemini-cli 설치 → prompt + skill 컨텍스트 합성
+   │  gemini --yolo -m $GEMINI_MODEL → JSON 추출 → gh issue create/edit
+   ▼              ▼                     ▼                        ▼
+[GitHub Issue]  [Telegram 회신]   [Issue 본문 갱신]        [Issue 코멘트/라벨/close]
+```
 
-- `knowledge/flows/<flow>-<action>.md` — flow concept 문서
-- `knowledge/concepts/<concept>.md` — 새 프로젝트 개념이 생긴 경우
-- `knowledge/log.md` — OKF bundle의 의미 있는 변경 이력
+Worker는 들어오는 모든 요청에 401 또는 200만 반환한다 (텔레그램 재시도 폭주 방지). 헬스체크는 `GET /health`.
+
+## 자율 루프 (`LOOP.md`)
+
+Telegram flow와 달리 트리거가 사람이 아니라 스케줄인 실행 단위. Claude Code의 `/loop`이 엔진이고, `worker/src/flows.ts`에 항목을 만들지 않는다.
+
+| 파일 | 역할 |
+|------|------|
+| [LOOP.md](LOOP.md) | 어떤 루프가 어떤 주기·readiness level로 도는지의 단일 진실원 |
+| [STATE.md](STATE.md) | 루프 state spine. 매 실행 시작에 읽고 끝에 쓴다 (High Priority / Watch List / Recent Noise) |
+| [loop-constraints.md](loop-constraints.md) | 매 실행마다 읽는 **binding** 규칙 |
+| [docs/safety.md](docs/safety.md) | 경로 denylist. 여기 걸리면 편집 대신 escalate |
+| [loop-budget.md](loop-budget.md) | 일일 실행/토큰/서브에이전트 상한과 kill switch |
+| [loop-run-log.md](loop-run-log.md) | 실행 1건당 1 entry. 30일 지난 항목은 prune |
+
+현재 등록된 루프는 Daily Triage 하나이고 **L1 (report-only)** — 관측하고 `STATE.md`에 쓸 뿐 아무것도 고치지 않는다. 구현자는 자기 작업을 done으로 표시하지 않고, `goal-verifier` 또는 `.claude/agents/loop-verifier.md`가 판정한다.
+
+```bash
+npx @cobusgreyling/loop audit .
+```
+
+루프 skill은 `.claude/skills/`에 실제 디렉터리로 산다 (`loop-constraints`, `loop-budget`, `loop-intake`, `loop-triage`, `goal-scoper`, `goal-verifier`). `.agents/skills/` symlink가 아닌 이유는 `skills-lock.json`이 외부 installer가 설치한 skill만 추적하기 때문이다.
+
+## 계획 관리 (`docs/plans/`)
+
+idea 이슈가 "무엇·왜"라면 `docs/plans/<issue#>-<slug>.md`는 "어떻게·언제·누가"다. plan 작성은 GHA가 아니라 사람이 클로드 데스크탑에서 한다.
+
+```
+/idea → [idea-elaborate] → Issue
+              │
+              ├── 코멘트 /grill → [idea-grill-followup] → 본문 정제 (반복 가능)
+              │                    needs_clarification=false 도달 시 grilled 라벨
+              ▼
+   (수동) docs/plans/<#>-<slug>.md 작성 → plan/<#>-<slug> branch → PR
+              │
+              ▼
+   [plan-link-back] → 이슈 코멘트 + has-plan 라벨 + (shipped면) close
+```
+
+frontmatter 스키마, status 전환 규칙, PR 규칙, CONTEXT.md/ADR 핸드오프는 [docs/plans/README.md](docs/plans/README.md) 참고. PR 템플릿은 `.github/PULL_REQUEST_TEMPLATE/plan.md` (`?template=plan.md`).
+
+## 문서 레이어
+
+같은 사실을 세 군데 두지 않는다. 대상 독자로 나뉜다.
+
+| 위치 | 독자 | 내용 |
+|------|------|------|
+| `README.md`, `docs/` | 사람 | 운영 모델, 셋업, flow별 상세 |
+| [CONTEXT.md](CONTEXT.md) | 사람 + 에이전트 | 프로젝트 고유 용어집. 동의어는 `_Avoid_`로 컷 |
+| [AGENTS.md](AGENTS.md) | 에이전트 | flow registry / loop / 문서 / 안전 규칙과 검증 명령 |
+| [knowledge/](knowledge/) | 에이전트 | Open Knowledge Format 번들. YAML frontmatter + concept 간 링크 |
+
+`knowledge/`는 README 사본이 아니라 에이전트가 개념과 flow 관계를 순회하는 계층이다. 새 flow나 load-bearing 개념이 생기면 `knowledge/flows/`, `knowledge/concepts/`, `knowledge/log.md`를 함께 갱신한다.
+
+## 스킬
+
+두 종류가 섞여 있다. 소유자가 다르니 구분한다.
+
+| 위치 | 소유 | 용도 |
+|------|------|------|
+| [skills/](skills/) | 이 repo | GitHub Action 안에서 Gemini CLI에 attach하는 컨텍스트 파일 (`*.SKILL.md`). 현재 `product-brainstorming.SKILL.md` 하나 |
+| `.agents/skills/` + [skills-lock.json](skills-lock.json) | 외부 installer | 설치된 agent skill 74개 (marketingskills 40, baoyu-skills 19, mattpocock/skills 14, huashu-design 1). 손으로 고치지 않는다 |
+| `.claude/skills/` | 혼합 | 대부분 `.agents/skills/`로의 symlink. 루프 skill 6개만 실제 디렉터리 |
 
 ## 운영 repo
 
-Hermes 원격 운영 runbook, host 진단/설치 스크립트, Discord/Camofox helper, 운영 artifact는 이 hub repo가 아니라 [hermes-workspace](hermes-workspace/) 같은 별도 운영 repo에서 관리한다. 이 저장소는 Telegram → Worker → GitHub Actions automation flow를 owner로 유지하고, Hermes 관련 실작업은 `hermes-workspace` repo에서 변경한다.
-
-운영 repo는 submodule이 아니다. hub는 [ops/repos.md](ops/repos.md) manifest에 URL과 브랜치만 가지고 있고, 실제 체크아웃은 각자 설치한다. 하위 repo에 커밋이 생겨도 hub에 포인터 커밋을 만들 필요가 없다.
+Hermes 원격 운영 runbook, ComfyUI 서비스 운영, host 스크립트 같은 실작업은 이 hub가 아니라 별도 운영 repo가 소유한다. submodule이 아니라 **manifest + 로컬 클론**이다. 하위 repo에 커밋이 생겨도 hub에 포인터 커밋을 만들 필요가 없다.
 
 ```bash
-bash ops/repo-sync.sh
+bash ops/repo-sync.sh          # 미설치 경로만 클론
+bash ops/repo-sync.sh --list   # manifest 검증 (name/url/path/branch 누락 시 fail)
 ```
 
 | path | repo |
@@ -38,85 +121,74 @@ bash ops/repo-sync.sh
 | `ops/remote-comfyui/` | [BoBeenLee/remote-comfyui](https://github.com/BoBeenLee/remote-comfyui) |
 | `ops/openhuman-altalt-proxy/` | [BoBeenLee/openhuman-altalt-proxy](https://github.com/BoBeenLee/openhuman-altalt-proxy) |
 
-DGX Spark 작업은 종류에 상관없이 `hermes-workspace/knowledge/runbooks/dgx-spark-remote-access.md`의 DGX Doc Map에서 시작한다. 문서 소유는 아래처럼 갈린다.
+URL과 브랜치의 단일 진실원은 [ops/repos.md](ops/repos.md) frontmatter다. repo를 추가하면 이 파일과 `.gitignore`를 **함께** 고친다.
+
+DGX Spark 작업은 종류에 상관없이 `hermes-workspace/knowledge/runbooks/dgx-spark-remote-access.md`의 DGX Doc Map에서 시작한다.
 
 | 대상 | owner |
 | --- | --- |
-| 호스트/OS, SSH·Tailscale, 원격 데스크톱, 종료, DGX Dashboard, 로컬 LLM 서비스 | [hermes-workspace](hermes-workspace/) `knowledge/runbooks/dgx-spark-remote-access.md` |
-| ComfyUI 서비스 내부, 모델 디렉터리, `comfyops` 계정, ops CLI | [ops/remote-comfyui](ops/remote-comfyui/) `references/dgx-comfyui.md` |
-| ComfyUI 워크플로, 모델 권고, 실행 산출물 | [ops/remote-comfyui](ops/remote-comfyui/) `docs/`, `knowledge/` |
-
-## 계획 관리 (`docs/plans/`)
-
-idea 이슈가 만들어진 다음 단계인 **계획 명세화**는 클로드 데스크탑/로컬에서 사람이 직접 진행한다. 산출물은 `docs/plans/<issue#>-<slug>.md` 로 PR 적재되고, 보강이 필요하면 같은 파일에 새 PR (revision) 을 올린다. `.github/workflows/plan-link-back.yml` 가 PR open/merge 시 연결 이슈에 자동 코멘트와 `has-plan` 라벨을 부착하고, `status: shipped` 면 이슈를 close 한다.
-
-```
-/idea → idea 이슈 생성 → (수동) 클로드 데스크탑에서 plan draft → docs/plans/ PR
-                                                       │
-                       ┌───────────── plan-link-back (자동) ─────────────┐
-                       ▼                                                  ▼
-                이슈 코멘트                                       has-plan 라벨 / close
-```
-
-자세한 운영 가이드와 template, status 전환 규칙은 [docs/plans/README.md](docs/plans/README.md) 참고.
-
-## 공통 아키텍처
-
-```
-[Telegram User]
-  │ /<command> <본문>
-  ▼
-[Cloudflare Worker (tg-automation-bridge)]
-  │ secret 검증, chat_id 화이트리스트
-  │ worker/src/flows.ts manifest에서 명령어 → eventType 매핑
-  │ GitHub repository_dispatch (event_type: <flow>-<action>)
-  ▼
-[GitHub Action: <flow>-<action>.yml]
-  │ Gemini OAuth 복원 → gemini-cli 설치
-  │ skills/*.SKILL.md 컨텍스트로 호출
-  │ 산출물 생성 (Issue 등) → Telegram 회신
-```
+| 호스트/OS, SSH·Tailscale, 원격 데스크톱, 종료, DGX Dashboard, 로컬 LLM 서비스 | `hermes-workspace` → `knowledge/runbooks/dgx-spark-remote-access.md` |
+| ComfyUI 서비스 내부, 모델 디렉터리, `comfyops` 계정, ops CLI | `ops/remote-comfyui` → `references/dgx-comfyui.md` |
+| ComfyUI 워크플로, 모델 권고, 실행 산출물 | `ops/remote-comfyui` → `docs/`, `knowledge/` |
 
 ## 디렉토리 구조
 
 ```
 .
-├── .github/workflows/
-│   └── <flow>-<action>.yml          ← flow별 워크플로우
+├── AGENTS.md                        ← 에이전트 규칙 (flow registry / loop / 안전)
+├── CONTEXT.md                       ← 프로젝트 용어집
+├── LOOP.md  STATE.md                ← 루프 manifest / 루프 상태
+├── loop-constraints.md              ← 루프 binding 규칙
+├── loop-budget.md  loop-run-log.md  ← 루프 예산 / 실행 로그
+├── skills-lock.json                 ← 설치된 agent skill lockfile (외부 installer 소유)
+├── .github/
+│   ├── workflows/
+│   │   ├── idea-elaborate.yml       ←   repository_dispatch: idea-submitted
+│   │   ├── idea-grill-followup.yml  ←   issue_comment: /grill
+│   │   └── plan-link-back.yml       ←   pull_request_target: docs/plans/**
+│   └── PULL_REQUEST_TEMPLATE/plan.md
+├── worker/                          ← Cloudflare Worker (Telegram 라우터)
+│   ├── src/flows.ts                 ←   flow manifest가 단일 진실원
+│   ├── src/index.ts                 ←   manifest를 읽어 webhook 라우팅
+│   ├── scripts/check-flows.mjs      ←   manifest ↔ adapter 파일/dispatch type 검증
+│   └── wrangler.toml
 ├── scripts/
-│   ├── <flow>-<action>.sh           ← 본 처리 스크립트
-│   └── prompts/
-│       └── <flow>-<action>.md       ← Gemini 시스템 프롬프트
-├── skills/
-│   └── *.SKILL.md                   ← Gemini에 attach할 skill 컨텍스트
-├── knowledge/                       ← OKF 지식 번들 (agent-consumable concepts)
+│   ├── idea-elaborate.sh            ← Gemini 호출 → gh issue create
+│   ├── idea-grill.sh                ← 코멘트 수집 → Gemini → 본문 갱신
+│   ├── _idea_grill_body.py          ←   grill 본문 마크다운 조작 (idea-grill.sh 전용)
+│   ├── fetch-url-content.py         ←   본문 속 URL 내용 추출 (yt-dlp / trafilatura)
+│   └── prompts/<flow>-<action>.md   ← Gemini 시스템 프롬프트
+├── skills/*.SKILL.md                ← Gemini에 attach할 skill 컨텍스트
+├── .agents/skills/                  ← 외부 installer가 설치한 agent skill
+├── .claude/
+│   ├── agents/loop-verifier.md      ← 루프 결과 판정 에이전트
+│   └── skills/                      ← 루프 skill(실물) + .agents/skills symlink
+├── knowledge/                       ← OKF 지식 번들 (concepts / flows / playbooks)
+├── docs/
+│   ├── <flow>-<action>.md           ← flow별 상세 문서
+│   ├── safety.md                    ← 루프 denylist
+│   └── plans/<issue#>-<slug>.md     ← 계획 문서
 ├── ops/
-│   ├── repos.md                     ← 운영 repo manifest (URL/브랜치 단일 진실원)
+│   ├── repos.md                     ← 운영 repo manifest (단일 진실원)
 │   ├── repo-sync.sh                 ←   manifest를 읽어 미설치 repo만 클론
 │   ├── remote-comfyui/              ←   clone, git 미추적
 │   └── openhuman-altalt-proxy/      ←   clone, git 미추적
-├── hermes-workspace/                ← Hermes 운영 repo clone, git 미추적
-├── worker/                          ← Cloudflare Worker (멀티 flow 라우터)
-│   ├── src/flows.ts                 ←   flow manifest가 단일 진실원
-│   ├── src/index.ts                 ←   manifest를 읽어 Telegram webhook 라우팅
-│   ├── scripts/check-flows.mjs      ←   manifest ↔ adapter 파일/dispatch type 검증
-│   └── wrangler.toml
-└── docs/
-    └── <flow>-<action>.md           ← flow별 상세 문서
+└── hermes-workspace/                ← clone, git 미추적
 ```
 
 ## 명명 규칙 (prefix)
 
-새 자동화를 추가할 때 모든 산출물이 같은 `<flow>` prefix를 공유하도록 한다. 예: `idea-elaborate`, `meeting-summarize`, `pr-review`.
+새 Telegram 자동화를 추가할 때 모든 산출물이 같은 `<flow>` prefix를 공유하도록 한다. 예: `idea-elaborate`, `meeting-summarize`, `pr-review`.
 
 | 위치 | 패턴 | 예시 |
 |------|------|------|
 | GitHub Actions workflow | `.github/workflows/<flow>-<action>.yml` | `idea-elaborate.yml` |
 | 실행 스크립트 | `scripts/<flow>-<action>.sh` | `idea-elaborate.sh` |
 | Gemini 프롬프트 | `scripts/prompts/<flow>-<action>.md` | `idea-elaborate.md` |
-| repository_dispatch event_type | `<flow>-<action>` | `idea-submitted` (legacy) / 신규는 `<flow>-<action>` |
+| repository_dispatch event_type | `<flow>-<action>` | 신규는 `<flow>-<action>` / `idea-submitted`는 유일하게 허용된 legacy |
 | Worker 명령어 등록 | `worker/src/flows.ts` manifest | `commands: ["idea","todo"]` |
 | 상세 문서 | `docs/<flow>-<action>.md` | `docs/idea-elaborate.md` |
+| OKF concept | `knowledge/flows/<flow>-<action>.md` | `knowledge/flows/idea-elaborate.md` |
 
 ## 새 flow 추가 가이드
 
@@ -137,15 +209,21 @@ idea 이슈가 만들어진 다음 단계인 **계획 명세화**는 클로드 �
 2. **Workflow 추가**: manifest의 `workflow` 경로에 파일을 만들고, 트리거를 `repository_dispatch.types: [meeting-summarize]`로 지정.
 3. **스크립트 / 프롬프트 추가**: `scripts/meeting-summarize.sh`, `scripts/prompts/meeting-summarize.md`.
 4. **(선택) skill 컨텍스트 추가**: `skills/<name>.SKILL.md`.
-5. **상세 문서 작성**: `docs/meeting-summarize.md` (flow 개요, 트리거, 환경변수, 출력, 검증). 위 [등록된 flow](#등록된-flow) 표에 한 줄 추가.
+5. **상세 문서 작성**: `docs/meeting-summarize.md` (flow 개요, 트리거, 환경변수, 출력, 검증). 위 [등록된 자동화](#등록된-자동화) 표에 한 줄 추가.
 6. **OKF concept 작성**: `knowledge/flows/meeting-summarize.md`에 `type: Automation Flow` frontmatter와 adapter 링크를 추가.
-7. **검증**: `cd worker && npm run typecheck`. 이 명령은 TypeScript와 함께 manifest가 가리키는 workflow/script/prompt/docs 파일 존재 여부, workflow `repository_dispatch.types`, legacy event type 예외를 검사한다.
+7. **검증**:
+   ```bash
+   cd worker && npm run typecheck
+   ```
+   TypeScript와 함께 manifest가 가리키는 workflow/script/prompt/docs 파일 존재 여부, workflow `repository_dispatch.types`, legacy event type 예외를 검사한다.
 8. **Worker 재배포**: `cd worker && npx wrangler deploy`.
 9. **(선택) BotFather `/setcommands`** 에 새 명령어 등록.
 
+스케줄로 도는 자율 루프는 flow가 아니다. `worker/src/flows.ts`에 넣지 말고 `LOOP.md`에 등록한다.
+
 ## 공통 인프라 셋업
 
-flow에 무관하게 한 번만 하면 되는 셋업입니다. flow별 추가 셋업은 각 `docs/<flow>-<action>.md`를 참고하세요.
+flow에 무관하게 한 번만 하면 되는 셋업. flow별 추가 셋업은 각 `docs/<flow>-<action>.md` 참고.
 
 ### 1. Telegram 봇 발급
 
@@ -158,7 +236,9 @@ flow에 무관하게 한 번만 하면 되는 셋업입니다. flow별 추가 �
 `repository_dispatch`만 호출할 fine-grained PAT를 만들어 Cloudflare에 `GH_DISPATCH_TOKEN`으로 등록.
 
 - Repository access: 이 레포 1개만
-- Permissions → Repository → **Contents: Read-only**, **Metadata: Read-only**
+- Permissions → Repository → **Contents: Read and write**, **Metadata: Read-only**
+
+> `POST /repos/{owner}/{repo}/dispatches`는 fine-grained PAT에서 Contents **write** 를 요구한다 ([GitHub 문서](https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens#repository-permissions-for-contents)). read-only로 만들면 Worker가 403을 받고 텔레그램에 "GitHub 트리거 실패 (403)"으로 회신한다.
 
 ### 3. Cloudflare Worker 배포
 
@@ -166,12 +246,24 @@ flow에 무관하게 한 번만 하면 되는 셋업입니다. flow별 추가 �
 cd worker
 npm install
 npx wrangler login
-# 시크릿 주입
-npx wrangler secret put TG_BOT_TOKEN          # 텔레그램 봇 토큰
-npx wrangler secret put TG_WEBHOOK_SECRET     # openssl rand -hex 32 같은 임의 문자열
-npx wrangler secret put GH_DISPATCH_TOKEN     # 위에서 만든 PAT
-# wrangler.toml 의 GH_REPO, ALLOWED_CHAT_IDS 본인 값으로 수정
-npx wrangler deploy
+```
+
+```bash
+cd worker && npx wrangler secret put TG_BOT_TOKEN
+```
+
+```bash
+cd worker && npx wrangler secret put TG_WEBHOOK_SECRET
+```
+
+```bash
+cd worker && npx wrangler secret put GH_DISPATCH_TOKEN
+```
+
+`TG_WEBHOOK_SECRET`은 `openssl rand -hex 32` 같은 임의 문자열. `wrangler.toml`의 `GH_REPO`, `ALLOWED_CHAT_IDS`를 본인 값으로 고친 뒤 배포한다.
+
+```bash
+cd worker && npx wrangler deploy
 ```
 
 배포 후 Worker URL 확인 (`https://tg-automation-bridge.<account>.workers.dev`).
@@ -179,37 +271,34 @@ npx wrangler deploy
 ### 4. Telegram setWebhook
 
 ```bash
-TOKEN="<TG_BOT_TOKEN>"
-WORKER_URL="https://tg-automation-bridge.<account>.workers.dev"
-SECRET="<TG_WEBHOOK_SECRET 와 동일 값>"
-
-curl -X POST "https://api.telegram.org/bot${TOKEN}/setWebhook" \
-  -H "Content-Type: application/json" \
-  -d "$(jq -n \
-    --arg url "${WORKER_URL}/tg-webhook" \
-    --arg secret "$SECRET" \
-    '{ url: $url, secret_token: $secret, allowed_updates: ["message"], drop_pending_updates: true }')"
+TOKEN="<TG_BOT_TOKEN>"; WORKER_URL="https://tg-automation-bridge.<account>.workers.dev"; SECRET="<TG_WEBHOOK_SECRET 와 동일 값>"; curl -X POST "https://api.telegram.org/bot${TOKEN}/setWebhook" -H "Content-Type: application/json" -d "$(jq -n --arg url "${WORKER_URL}/tg-webhook" --arg secret "$SECRET" '{ url: $url, secret_token: $secret, allowed_updates: ["message"], drop_pending_updates: true }')"
 ```
 
 확인:
+
 ```bash
-curl -s "https://api.telegram.org/bot${TOKEN}/getWebhookInfo" | jq
+curl -s "https://api.telegram.org/bot<TG_BOT_TOKEN>/getWebhookInfo" | jq
 ```
 
-### 5. flow별 GitHub Secrets
+### 5. GitHub Secrets / Variables
 
-각 flow가 요구하는 secret 목록은 `docs/<flow>-<action>.md`의 "환경변수 / 시크릿" 섹션을 참고. 모든 flow가 공통으로 필요로 하는 것:
+| 이름 | 종류 | 필수 | 사용처 |
+|------|------|------|--------|
+| `GEMINI_OAUTH_CREDS` | secret | ✅ | `~/.gemini/oauth_creds.json`을 base64 인코딩한 값. `idea-elaborate`, `idea-grill-followup` |
+| `GEMINI_GOOGLE_EMAIL` | secret | ✅ | Gemini OAuth 계정 이메일 |
+| `TG_BOT_TOKEN` | secret | ✅ | Action에서 텔레그램 회신 |
+| `ALLOWED_GITHUB_LOGINS` | secret | 선택 | `/grill` 트리거 화이트리스트. 비우면 repo write 권한 보유자로 폴백 |
+| `GEMINI_MODEL` | variable | 선택 | 기본 `gemini-3-pro-preview`. 옵션은 [docs/idea-elaborate.md](docs/idea-elaborate.md#gemini-모델-옵션) |
 
-| Secret | 용도 |
-|--------|------|
-| `TG_BOT_TOKEN` | Action에서 텔레그램 회신 시 사용 |
-
-flow별 추가 secret(예: `GEMINI_OAUTH_CREDS`)은 해당 flow 문서 참고.
+`GITHUB_TOKEN`은 Actions가 자동 주입하므로 등록하지 않는다.
 
 ## 보안 메모
 
 - `TG_WEBHOOK_SECRET`은 Worker와 setWebhook 양쪽에 같은 값을 넣어야 한다.
 - `ALLOWED_CHAT_IDS`가 비어 있으면 모든 발신자가 통과하므로, 운영 시 반드시 본인 chat_id로 채울 것.
-- `GH_DISPATCH_TOKEN`은 fine-grained PAT, 단일 레포 + 최소 권한.
-- Worker에 들어오는 모든 요청은 401/200 둘 중 하나만 반환 (재시도 폭주 방지).
+- `GH_DISPATCH_TOKEN`은 fine-grained PAT, 단일 레포 + 최소 권한 (Contents write / Metadata read).
+- `/grill`은 opt-in 트리거다. 매치 안 되는 코멘트는 비용 0으로 컷하고, 실제 실행은 `idea` 라벨 + 비봇 + 첫 줄 정규식 + actor 화이트리스트를 모두 통과해야 한다.
+- `plan-link-back`은 `pull_request_target`을 쓴다. PR head 코드를 실행하지 않고 frontmatter만 파싱하는 현재 형태를 유지할 것.
+- 자율 루프가 건드리면 안 되는 경로는 [docs/safety.md](docs/safety.md)가 binding denylist다. 루프는 denylist에 걸리면 편집 대신 `STATE.md`에 `needs-human`으로 escalate 한다.
+- `worker/wrangler.toml`에는 시크릿을 넣지 않는다. `wrangler secret put`만 사용.
 - 새 flow 추가 시 trigger 가능한 사용자 범위(default = 화이트리스트)와 GitHub Action이 작성/수정하는 자원 범위를 한 번 더 점검할 것.
