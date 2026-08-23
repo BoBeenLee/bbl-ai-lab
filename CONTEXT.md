@@ -31,7 +31,7 @@ _Avoid_: nested command, 하위 명령
 _Avoid_: git submodule, gitlink 포인터 커밋, flow adapter script와 운영 host script를 같은 `scripts/` owner로 취급하기
 
 **Project repo**:
-`projects/` 아래에 매니페스트로 설치되는 별도 repo. operator workspace repo와 설치 방식은 같지만 소유 대상이 다르다 — operator repo는 원격 호스트의 운영을 소유하고, project repo는 Telegram/Actions flow가 아닌 작업 덩어리를 소유한다. 예: `projects/games`는 게임 관련 에이전트 스킬을 소유하며 개인 계정 데이터를 담기 때문에 private다.
+`projects/` 아래에 매니페스트로 설치되는 별도 repo. operator workspace repo와 설치 방식은 같지만 소유 대상이 다르다 — operator repo는 원격 호스트의 운영을 소유하고, project repo는 Telegram/Actions flow가 아닌 작업 덩어리를 소유한다. 예: `projects/games`는 게임 관련 에이전트 스킬을, `projects/travel`은 여행 계획을 소유한다. 둘 다 개인 데이터(계정 로스터, 여행 일정)를 담기 때문에 private다.
 _Avoid_: operator workspace repo와 동일 취급, hub의 flow로 취급, `ops/` 아래 배치
 
 **Operator repo manifest**:
