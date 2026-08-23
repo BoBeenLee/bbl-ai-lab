@@ -368,6 +368,12 @@
       "skillPath": "skills/engineering/triage/SKILL.md",
       "computedHash": "2b6efb6da12d92551772fcc04acf331f4e0e6f7bd9d4cb23ce0b301e0b128feb"
     },
+    "unlazy": {
+      "source": "Leonxlnx/unlazy",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "f93525f0a3dc840746eebeb6855b542862c4c92d3e5791b361ed3ed0fd1d7b85"
+    },
     "video": {
       "source": "coreyhaines31/marketingskills",
       "sourceType": "github",
