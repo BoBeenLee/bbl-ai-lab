@@ -20,6 +20,10 @@ repositories:
     url: https://github.com/BoBeenLee/travel.git
     path: projects/travel
     branch: main
+  - name: finance
+    url: https://github.com/BoBeenLee/finance.git
+    path: projects/finance
+    branch: main
 ---
 
 # 운영 repo 목록
@@ -41,5 +45,5 @@ bash ops/repo-sync.sh
 
 ## private repo
 
-`games`와 `travel`은 private다. 계정 로스터와 여행 일정 같은 개인 데이터를 담기 때문이다. private repo는
-`gh auth` 세션이나 `GIT_TOKEN=<pat>` 없이는 클론되지 않는다.
+`games`, `travel`, `finance`는 private다. 계정 로스터, 여행 일정, 재무 프로필 같은 개인 데이터를 담기
+때문이다. private repo는 `gh auth` 세션이나 `GIT_TOKEN=<pat>` 없이는 클론되지 않는다.
