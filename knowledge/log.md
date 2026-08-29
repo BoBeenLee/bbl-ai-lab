@@ -9,6 +9,13 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 # Log
 
+## 2026-08-29
+
+- `projects/music` private repo를 `ops/repos.md` 매니페스트에 등록. AI 음악 제작 지식을 소유하며,
+  첫 산출물은 로컬 오픈 모델과 상용 서비스를 라이선스·비용·하드웨어 제약으로 비교한 조사 문서다.
+  hub 의 `docs/`는 flow 문서 자리이고 `knowledge/`는 hub 자신의 개념 번들이라 외부 토픽을
+  담지 않는다는 것이 별도 repo 로 뺀 이유다. 허브는 URL 과 브랜치만 소유한다.
+
 ## 2026-08-23
 
 - `projects/finance` private repo를 `ops/repos.md` 매니페스트에 등록. 재테크 지식 베이스를 소유하며,
