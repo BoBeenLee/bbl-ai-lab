@@ -131,6 +131,23 @@ DGX Spark 작업은 종류에 상관없이 `hermes-workspace/knowledge/runbooks/
 | ComfyUI 서비스 내부, 모델 디렉터리, `comfyops` 계정, ops CLI | `ops/remote-comfyui` → `references/dgx-comfyui.md` |
 | ComfyUI 워크플로, 모델 권고, 실행 산출물 | `ops/remote-comfyui` → `docs/`, `knowledge/` |
 
+## 프로젝트 repo
+
+카테고리별로 **지식을 축적하고 그 지식으로 결과물을 만드는** repo. 설치 방식은 운영 repo와 같고(`ops/repos.md` manifest + `repo-sync.sh`) 소유 대상만 다르다 — 운영 repo는 원격 호스트의 운영을, 프로젝트 repo는 한 카테고리의 축적물을 소유한다. Telegram/Actions flow가 아니므로 `worker/src/flows.ts`에는 등록하지 않는다.
+
+| path | repo | 축적층 (남는 것) | 산출층 (건별로 소멸) | 작업 규칙 |
+| --- | --- | --- | --- | --- |
+| `projects/games/` | [BoBeenLee/games](https://github.com/BoBeenLee/games) | `skills/party-guide/references/`, `roster.md`, `builds.md` | `guide.md`, `party-candidates.md` | `skills/party-guide/SKILL.md` |
+| `projects/travel/` | [BoBeenLee/travel](https://github.com/BoBeenLee/travel) | `knowledge/` | `trips/<여행>/` | `CLAUDE.md` |
+| `projects/finance/` | [BoBeenLee/finance](https://github.com/BoBeenLee/finance) | `knowledge/` (숫자는 `rules.yaml` 한 곳) | `guides/` | `CLAUDE.md` |
+| `projects/music/` | [BoBeenLee/music](https://github.com/BoBeenLee/music) | `research/`, `craft/` | `runs/<날짜>-<slug>/` | `AGENTS.md` |
+
+두 층을 **디렉터리로 가른다.** 축적층은 카테고리가 살아 있는 한 남고, 산출층은 건이 끝나면 참조 기록으로만 남는다. 섞으면 다음 건이 빈 화면에서 시작하거나, 지난 건의 상황 판단이 지식으로 승격돼 버린다.
+
+넷 다 **private**다. `games`/`travel`/`finance`는 계정 로스터·여행 일정·재무 프로필 같은 개인 데이터를 이미 담고 있고, `music`은 생성곡·가사·취향이 쌓이면 개인 데이터가 된다. 클론에 `gh auth` 세션이나 `GIT_TOKEN=<pat>`이 필요하다.
+
+각 repo가 자기 구조·규율·검증 명령의 단일 진실원이다. hub는 URL과 브랜치만 소유하고 내용은 추적하지 않는다.
+
 ## 디렉토리 구조
 
 ```
@@ -169,10 +186,13 @@ DGX Spark 작업은 종류에 상관없이 `hermes-workspace/knowledge/runbooks/
 │   ├── safety.md                    ← 루프 denylist
 │   └── plans/<issue#>-<slug>.md     ← 계획 문서
 ├── ops/
-│   ├── repos.md                     ← 운영 repo manifest (단일 진실원)
+│   ├── repos.md                     ← 운영·프로젝트 repo manifest (단일 진실원)
 │   ├── repo-sync.sh                 ←   manifest를 읽어 미설치 repo만 클론
 │   ├── remote-comfyui/              ←   clone, git 미추적
 │   └── openhuman-altalt-proxy/      ←   clone, git 미추적
+├── projects/                        ← 카테고리별 지식·산출 repo (clone, git 미추적)
+│   ├── games/    travel/
+│   └── finance/  music/
 └── hermes-workspace/                ← clone, git 미추적
 ```
 
