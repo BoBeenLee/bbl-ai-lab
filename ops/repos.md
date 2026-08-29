@@ -24,6 +24,10 @@ repositories:
     url: https://github.com/BoBeenLee/finance.git
     path: projects/finance
     branch: main
+  - name: music
+    url: https://github.com/BoBeenLee/music.git
+    path: projects/music
+    branch: main
 ---
 
 # 운영 repo 목록
@@ -45,5 +49,7 @@ bash ops/repo-sync.sh
 
 ## private repo
 
-`games`, `travel`, `finance`는 private다. 계정 로스터, 여행 일정, 재무 프로필 같은 개인 데이터를 담기
-때문이다. private repo는 `gh auth` 세션이나 `GIT_TOKEN=<pat>` 없이는 클론되지 않는다.
+`games`, `travel`, `finance`, `music`은 private다. 앞의 셋은 계정 로스터, 여행 일정, 재무 프로필 같은
+개인 데이터를 이미 담고 있고, `music`은 생성곡·가사·취향이 쌓이면 개인 데이터가 되기 때문이다.
+나중에 공개에서 비공개로 돌리는 것보다 처음부터 private인 쪽이 싸다.
+private repo는 `gh auth` 세션이나 `GIT_TOKEN=<pat>` 없이는 클론되지 않는다.
