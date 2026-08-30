@@ -31,12 +31,12 @@ _Avoid_: nested command, 하위 명령
 _Avoid_: git submodule, gitlink 포인터 커밋, flow adapter script와 운영 host script를 같은 `scripts/` owner로 취급하기
 
 **Project repo**:
-`projects/` 아래에 매니페스트로 설치되는 별도 repo. operator workspace repo와 설치 방식은 같지만 소유 대상이 다르다 — operator repo는 원격 호스트의 운영을 소유하고, project repo는 Telegram/Actions flow가 아닌 작업 덩어리를 소유한다. 예: `projects/games`는 게임 관련 에이전트 스킬을, `projects/travel`은 여행 계획을, `projects/finance`는 재테크 지식 베이스를, `projects/music`은 AI 음악 제작 지식을 소유한다. 넷 다 private다 — 앞의 셋은 개인 데이터(계정 로스터, 여행 일정, 재무 프로필)를 담고 있고, `music`은 생성곡·가사·취향이 쌓이면 개인 데이터가 되기 때문이다.
-_Avoid_: operator workspace repo와 동일 취급, hub의 flow로 취급, `ops/` 아래 배치
+`projects/` 아래에 매니페스트로 설치되는 별도 repo. operator workspace repo와 설치 방식은 같지만 소유 대상이 다르다 — operator repo는 원격 호스트의 운영을 소유하고, project repo는 Telegram/Actions flow가 아닌 작업 덩어리를 소유한다. 예: `projects/games`는 게임 관련 에이전트 스킬을, `projects/travel`은 여행 계획을, `projects/finance`는 재테크 지식 베이스를, `projects/music`은 AI 음악 제작 지식을, `projects/shopping`은 실구매 판단 워크플로를 소유한다. 다섯 다 private다 — 앞의 셋은 개인 데이터(계정 로스터, 여행 일정, 재무 프로필)를 담고 있고, `music`은 생성곡·가사·취향이, `shopping`은 구매 이력·예산·사이즈가 쌓이면 개인 데이터가 되기 때문이다. operator repo와 달리 매니페스트 등록은 손이 아니라 `repo-sync.sh`가 한다.
+_Avoid_: operator workspace repo와 동일 취급, hub의 flow로 취급, `ops/` 아래 배치, `projects/` 항목을 손으로 매니페스트에 적기
 
 **Operator repo manifest**:
-`ops/repos.md`의 YAML frontmatter. operator workspace repo의 `name`, `url`, `path`, `branch`를 모아둔 단일 진실원이며 `ops/repo-sync.sh`가 유일한 소비자다.
-_Avoid_: README에 URL 중복 기재, .gitmodules
+`ops/repos.md`의 YAML frontmatter. operator workspace repo와 project repo의 `name`, `url`, `path`, `branch`를 모아둔 단일 진실원이며 `ops/repo-sync.sh`가 유일한 소비자이자 `projects/` 항목의 유일한 필자다.
+_Avoid_: README에 URL 중복 기재, .gitmodules, `projects/` 항목 수기 편집
 
 **Knowledge bundle**:
 `knowledge/` 아래에 있는 Open Knowledge Format 문서 묶음. 사람용 운영 문서(`README.md`, `docs/`)를 대체하지 않고, 에이전트가 프로젝트 개념과 flow 관계를 안정적으로 순회하도록 돕는 agent-consumable 지식 계층이다.

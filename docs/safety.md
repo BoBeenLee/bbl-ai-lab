@@ -14,7 +14,7 @@ These paths break the hub or leak credentials when an agent guesses:
 | `worker/wrangler.toml` | Must stay secret-free; secrets go through `wrangler secret put`. |
 | `worker/src/flows.ts` | Single flow manifest. A wrong edit silently breaks Telegram routing. |
 | `.github/workflows/**` | Dispatch surface. A loop editing its own trigger is a runaway. |
-| `ops/repos.md`, `.gitignore` | Operator repo manifest pair; must change together. |
+| `ops/repos.md`, `.gitignore` | Operator repo manifest pair; must change together. `projects/` entries are written by `ops/repo-sync.sh`, not by hand. |
 | `skills-lock.json`, `.agents/skills/**` | Managed by the external skills installer, not by hand. |
 | `hermes-workspace/`, `ops/remote-comfyui/`, `ops/openhuman-altalt-proxy/` | Untracked operator repo clones. Owned by their own repos. |
 | `.claude/worktrees/**` | Other sessions' worktrees. Never delete. |
