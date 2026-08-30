@@ -11,6 +11,13 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 ## 2026-08-30
 
+- `projects/hiking` private repo 추가. 등산 지식(축적층 `knowledge/`)과 산행 한 건(산출층
+  `hikes/<날짜>-<산>/`)을 디렉터리로 가르는 규율만 먼저 세우고 내용은 비워 두었다. 매니페스트
+  등록은 손으로 하지 않았다 — origin 을 붙이고 `bash ops/repo-sync.sh` 를 한 번 돌려
+  자동 등록 경로가 실제로 동작하는지 같이 확인했다. `hiking` 이 private 인 이유는 `music`·
+  `shopping` 과 같은 축이다: 처음부터 개인 데이터를 담아서가 아니라 GPS 경로·체력 수치·장비
+  이력이 쌓이면서 개인 데이터가 되기 때문이다.
+
 - `projects/` 아래 repo의 매니페스트 등록을 `ops/repo-sync.sh`가 하도록 바꿨다. 스크립트가
   `projects/*/` 를 훑어 매니페스트에 없는 클론의 `origin` URL과 기본 브랜치를 읽어 frontmatter에
   넣고, `.gitignore`는 개별 경로 대신 `/projects/*/` glob 하나로 덮는다. 사람이 잊는 쪽은
