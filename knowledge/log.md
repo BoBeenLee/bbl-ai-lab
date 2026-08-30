@@ -9,6 +9,15 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 # Log
 
+## 2026-08-30
+
+- `projects/` 아래 repo의 매니페스트 등록을 `ops/repo-sync.sh`가 하도록 바꿨다. 스크립트가
+  `projects/*/` 를 훑어 매니페스트에 없는 클론의 `origin` URL과 기본 브랜치를 읽어 frontmatter에
+  넣고, `.gitignore`는 개별 경로 대신 `/projects/*/` glob 하나로 덮는다. 사람이 잊는 쪽은
+  클론이 아니라 등록이고, 그 망각은 repo를 *만든* 머신에서 일어나므로 등록이 클론과 같은 명령에
+  묶여 있어야 잡힌다 — 실제로 `projects/shopping`이 그렇게 누락된 채로 있었다.
+  `ops/repo-sync.test.sh`가 등록·중복 방지·origin 없는 디렉터리 경고를 임시 디렉터리에서 검증한다.
+
 ## 2026-08-29
 
 - `projects/music` private repo를 `ops/repos.md` 매니페스트에 등록. AI 음악 제작 지식을 소유하며,

@@ -40,7 +40,5 @@ __pycache__/
 /ops/openhuman-altalt-proxy/
 
 ### projects 하위 별도 repo (hub 가 추적하지 않음)
-/projects/games/
-/projects/travel/
-/projects/finance/
-/projects/music/
+# glob 이므로 projects/ 아래 repo를 추가해도 이 파일을 고칠 필요가 없다.
+/projects/*/

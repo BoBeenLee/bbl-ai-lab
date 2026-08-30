@@ -7,6 +7,36 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MANIFEST="$ROOT/ops/repos.md"
 
+# projects/ 아래 클론 중 manifest에 없는 것을 origin URL을 읽어 자동 등록한다.
+# 손으로 manifest를 고치는 단계를 없앤다. 등록된 뒤에는 no-op이다.
+for dir in "$ROOT"/projects/*/; do
+  [ -e "$dir/.git" ] || continue
+  name="$(basename "$dir")"
+  grep -qE "^[[:space:]]*path:[[:space:]]*projects/$name[[:space:]]*$" "$MANIFEST" && continue
+
+  url="$(git -C "$dir" remote get-url origin 2>/dev/null || true)"
+  if [ -z "$url" ]; then
+    echo "warn  projects/$name: origin remote가 없어 등록하지 못했다 (git remote add origin <url>)" >&2
+    continue
+  fi
+
+  # 기본 브랜치를 우선한다. 피처 브랜치를 체크아웃한 채 등록하면 그 브랜치가 사라진 뒤 클론이 깨진다.
+  branch="$(git -C "$dir" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || true)"
+  branch="${branch#origin/}"
+  [ -n "$branch" ] || branch="$(git -C "$dir" branch --show-current)"
+  [ -n "$branch" ] || branch=main
+
+  echo "adopt projects/$name ($branch)"
+  # frontmatter 닫는 --- 바로 앞에 끼운다. BSD awk는 -v 값에 개행을 못 받으므로 필드별로 넘긴다.
+  awk -v name="$name" -v url="$url" -v branch="$branch" '
+    /^---[[:space:]]*$/ && ++n == 2 {
+      printf "  - name: %s\n    url: %s\n    path: projects/%s\n    branch: %s\n", name, url, name, branch
+    }
+    { print }
+  ' "$MANIFEST" > "$MANIFEST.tmp"
+  mv "$MANIFEST.tmp" "$MANIFEST"
+done
+
 # frontmatter(첫 --- ~ 두 번째 ---)만 잘라 name/url/path/branch 레코드로 편다.
 records="$(
   awk '/^---[[:space:]]*$/ { n++; next } n == 1' "$MANIFEST" | awk '
