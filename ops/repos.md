@@ -12,6 +12,10 @@ repositories:
     url: https://github.com/BoBeenLee/openhuman-altalt-proxy.git
     path: ops/openhuman-altalt-proxy
     branch: main
+  - name: openmontage
+    url: https://github.com/calesthio/OpenMontage.git
+    path: ops/openmontage
+    branch: main
   - name: games
     url: https://github.com/BoBeenLee/games.git
     path: projects/games
@@ -73,3 +77,11 @@ bash ops/repo-sync.sh
 사이즈가, `hiking`은 GPS 경로·체력 수치·장비 이력이 쌓이면 개인 데이터가 되기 때문이다.
 나중에 공개에서 비공개로 돌리는 것보다 처음부터 private인 쪽이 싸다.
 private repo는 `gh auth` 세션이나 `GIT_TOKEN=<pat>` 없이는 클론되지 않는다.
+
+## 외부 도구 repo
+
+`openmontage` 만 내 소유가 아니다. 업스트림은 [calesthio/OpenMontage](https://github.com/calesthio/OpenMontage),
+라이선스는 AGPL-3.0 이다. `repo-sync.sh` 는 클론만 하고 의존성은 설치하지 않는다. venv, npm, `.env` 는
+그 repo 자신의 `make setup` 이 만든다.
+
+로컬 수정은 푸시 대상이 없으므로 로컬 커밋으로만 남는다. 푸시가 필요해지면 그때 포크하고 이 항목의 `url` 을 바꾼다.

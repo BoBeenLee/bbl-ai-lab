@@ -3,8 +3,8 @@ type: Project Concept
 title: Operator workspace repo
 description: A separate operational tooling repository installed by manifest-driven clone rather than tracked as a submodule.
 resource: ../../ops/repos.md
-tags: [operator-repo, manifest, hermes]
-timestamp: 2026-08-22T00:00:00+09:00
+tags: [operator-repo, manifest, hermes, openmontage]
+timestamp: 2026-08-31T00:00:00+09:00
 ---
 
 # Operator Workspace Repo
@@ -43,6 +43,29 @@ The reason registration is bundled into the sync command rather than left as a
 documented step: the forgettable half is registration, not cloning, and it is
 forgotten on the machine where the repo was *created* — a machine that never needs
 to clone. Only a command run there can catch it.
+
+# Upstream tool repos
+
+The manifest also installs upstream tool repos: third-party tools that are not
+mine at all. `ops/openmontage` is the only one today.
+
+Again the distinction is ownership. An operator repo owns operations for a remote
+host, a project repo owns a body of work, and an upstream tool repo is owned by
+its upstream author. Three things follow. Local edits can be committed but have
+nowhere to push, so a fork is deferred until a push is actually needed. The
+license is the upstream's and does not reach the hub (`ops/openmontage` is
+AGPL-3.0, the hub is not). And `repo-sync.sh` only clones. Dependency install is
+the repo's own procedure, `make setup` in this case, which builds its venv, npm
+tree, and `.env`.
+
+`.gitignore` is edited by hand for these, exactly as for an operator repo. The
+self-registration in `repo-sync.sh` covers `projects/*/` only.
+
+The boundary against `ops/remote-comfyui`: OpenMontage owns the production
+pipeline around generation, and `remote-comfyui` owns DGX host operations. The
+former calls the latter as one provider inside its `assets` stage. Batch queueing
+stays with `remote-comfyui`, because OpenMontage's ComfyUI tool does not free
+memory between jobs.
 
 # Boundary
 

@@ -120,8 +120,11 @@ bash ops/repo-sync.sh --list   # manifest 검증 (name/url/path/branch 누락 �
 | `hermes-workspace/` | [BoBeenLee/hermes-workspace](https://github.com/BoBeenLee/hermes-workspace) |
 | `ops/remote-comfyui/` | [BoBeenLee/remote-comfyui](https://github.com/BoBeenLee/remote-comfyui) |
 | `ops/openhuman-altalt-proxy/` | [BoBeenLee/openhuman-altalt-proxy](https://github.com/BoBeenLee/openhuman-altalt-proxy) |
+| `ops/openmontage/` | [calesthio/OpenMontage](https://github.com/calesthio/OpenMontage) (업스트림, AGPL-3.0) |
 
 URL과 브랜치의 단일 진실원은 [ops/repos.md](ops/repos.md) frontmatter다. 운영 repo를 추가하면 이 파일과 `.gitignore`를 **함께** 고친다. `projects/` 아래는 손으로 고치지 않는다 — 아래 참조.
+
+`ops/openmontage/` 만 내 소유가 아닌 업스트림 도구다. `repo-sync.sh` 는 클론까지만 하므로, 그 repo 안에서 `make setup` 을 한 번 더 돌려야 쓸 수 있다.
 
 DGX Spark 작업은 종류에 상관없이 `hermes-workspace/knowledge/runbooks/dgx-spark-remote-access.md`의 DGX Doc Map에서 시작한다.
 
