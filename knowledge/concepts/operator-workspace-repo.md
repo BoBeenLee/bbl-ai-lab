@@ -67,6 +67,52 @@ former calls the latter as one provider inside its `assets` stage. Batch queuein
 stays with `remote-comfyui`, because OpenMontage's ComfyUI tool does not free
 memory between jobs.
 
+# Calling remote-comfyui from OpenMontage
+
+Verified end to end on 2026-08-31: install, wiring, a compose-only pass over
+existing `remote-comfyui` output, and one LTX job queued on the DGX through
+OpenMontage's own tool.
+
+Wiring is `.env` line 110, `COMFYUI_SERVER_URL`. Line 111,
+`COMFYUI_VIDEO_SERVER_URL`, overrides it for the `comfyui_video` tool alone, so
+leave it empty unless a second server really exists.
+
+`make preflight` reports the provider as **degraded, not available**, and that is
+the correct steady state. `is_available()` is true; the degrade is only that the
+bundled WAN 2.2 model stack is absent from the DGX, which is irrelevant to a
+custom `workflow_path`. The consequence that does matter: `video_selector` routes
+on availability, so it will never pick ComfyUI. Call the tool directly.
+
+A custom workflow needs `workflow_path`, `output_node`, and `prompt` (required by
+the schema even though the graph carries its own text). Workflows under
+`ops/remote-comfyui/workflows/` are wrapped as `{"prompt": ...}` and the client
+wraps again, so unwrap with `jq .prompt` first. `output_node` differs per
+workflow — the two H3 graphs use `14`, `ltx25-smoke-api.json` uses `20`. Read it
+out of the graph every time rather than carrying a remembered value.
+
+## Upstream defects to work around
+
+There is nowhere to push a fix, so these stay as workarounds until a fork earns
+its keep.
+
+- `final_review`'s motion check classifies a cut as motion only by the source
+  file extension or a `cuts[].type` field. With asset-manifest IDs in
+  `cuts[].source` an all-video edit reports `motion_ratio 0%`, and the
+  `edit_decisions` schema forbids `cuts[].type` (`additionalProperties: false`),
+  so the documented ID form cannot pass the gate. Put absolute paths in
+  `cuts[].source`; keep the manifest as the provenance and cost record.
+- `CostTracker._save()` writes an `approved_tools` key that
+  `schemas/artifacts/cost_log.schema.json` rejects under
+  `additionalProperties: false`. The writer violates its own schema.
+- `comfyui_video` reports bundled-WAN defaults as the geometry of a custom
+  workflow's output. A 768x512 / 24fps / 49-frame render came back described as
+  832x480 / 16fps / 81 frames. The `workflow_provenance` block is accurate;
+  measure the file with `ffprobe` instead of trusting the result.
+- The FFmpeg compose path hardcodes `fps=30`, so 24fps source is resampled with
+  no knob to stop it. Resolution does have one: set
+  `edit_decisions.metadata.compose_target`, because the 1920x1080 default
+  pillarboxes portrait footage.
+
 # Boundary
 
 - Flow adapter scripts belong in the hub repository's top-level `scripts/`.
