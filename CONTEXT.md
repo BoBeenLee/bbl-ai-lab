@@ -34,8 +34,12 @@ _Avoid_: git submodule, gitlink 포인터 커밋, flow adapter script와 운영 
 `projects/` 아래에 매니페스트로 설치되는 별도 repo. operator workspace repo와 설치 방식은 같지만 소유 대상이 다르다 — operator repo는 원격 호스트의 운영을 소유하고, project repo는 Telegram/Actions flow가 아닌 작업 덩어리를 소유한다. 예: `projects/games`는 게임 관련 에이전트 스킬을, `projects/travel`은 여행 계획을, `projects/finance`는 재테크 지식 베이스를, `projects/music`은 AI 음악 제작 지식을, `projects/shopping`은 실구매 판단 워크플로를, `projects/hiking`은 등산 지식과 산행 기록을 소유한다. 여섯 다 private다 — 앞의 셋은 개인 데이터(계정 로스터, 여행 일정, 재무 프로필)를 담고 있고, `music`은 생성곡·가사·취향이, `shopping`은 구매 이력·예산·사이즈가, `hiking`은 GPS 경로·체력 수치·장비 이력이 쌓이면 개인 데이터가 되기 때문이다. operator repo와 달리 매니페스트 등록은 손이 아니라 `repo-sync.sh`가 한다.
 _Avoid_: operator workspace repo와 동일 취급, hub의 flow로 취급, `ops/` 아래 배치, `projects/` 항목을 손으로 매니페스트에 적기
 
+**Upstream tool repo**:
+매니페스트로 설치되지만 내가 소유하지 않는 서드파티 도구 repo. operator workspace repo(원격 호스트의 운영을 소유)도 project repo(작업 덩어리를 소유)도 아니며, 소유자가 상류라는 점에서 갈린다. 결과로 세 가지가 달라진다. 로컬 수정은 커밋해도 푸시할 곳이 없고, 라이선스는 hub와 무관하게 상류 것을 따르며(`ops/openmontage`는 AGPL-3.0), `repo-sync.sh`는 클론만 하고 의존성 설치는 그 repo 자신의 절차(`make setup`)가 한다. 예: `ops/openmontage`는 영상 제작 파이프라인 도구이고 `assets` 단계에서 `ops/remote-comfyui`의 DGX ComfyUI를 프로바이더로 호출한다.
+_Avoid_: operator workspace repo와 동일 취급, git submodule, hub가 상류 라이선스를 상속한다고 보기, `repo-sync.sh`가 설치까지 한다고 보기
+
 **Operator repo manifest**:
-`ops/repos.md`의 YAML frontmatter. operator workspace repo와 project repo의 `name`, `url`, `path`, `branch`를 모아둔 단일 진실원이며 `ops/repo-sync.sh`가 유일한 소비자이자 `projects/` 항목의 유일한 필자다.
+`ops/repos.md`의 YAML frontmatter. operator workspace repo, project repo, upstream tool repo의 `name`, `url`, `path`, `branch`를 모아둔 단일 진실원이며 `ops/repo-sync.sh`가 유일한 소비자이자 `projects/` 항목의 유일한 필자다.
 _Avoid_: README에 URL 중복 기재, .gitmodules, `projects/` 항목 수기 편집
 
 **Knowledge bundle**:
