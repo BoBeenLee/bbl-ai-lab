@@ -44,6 +44,10 @@ repositories:
     url: https://github.com/BoBeenLee/cad.git
     path: projects/cad
     branch: main
+  - name: voice-agent
+    url: https://github.com/BoBeenLee/voice-agent.git
+    path: projects/voice-agent
+    branch: main
 ---
 
 # 운영 repo 목록
@@ -76,10 +80,10 @@ bash ops/repo-sync.sh
 
 ## private repo
 
-`games`, `travel`, `finance`, `music`, `shopping`, `hiking`, `cad`는 private다. 앞의 셋은 계정 로스터, 여행 일정,
-재무 프로필 같은 개인 데이터를 이미 담고 있고, `music`은 생성곡·가사·취향이, `shopping`은 구매 이력·예산·
-사이즈가, `hiking`은 GPS 경로·체력 수치·장비 이력이, `cad`는 집 실측 치수·제작 이력이 쌓이면 개인 데이터가
-되기 때문이다.
+`games`, `travel`, `finance`, `music`, `shopping`, `hiking`, `cad`, `voice-agent`는 private다. 앞의 셋은 계정 로스터,
+여행 일정, 재무 프로필 같은 개인 데이터를 이미 담고 있고, `music`은 생성곡·가사·취향이, `shopping`은 구매 이력·
+예산·사이즈가, `hiking`은 GPS 경로·체력 수치·장비 이력이, `cad`는 집 실측 치수·제작 이력이, `voice-agent`는
+통화 녹음·전사·목소리가 쌓이면 개인 데이터가 되기 때문이다.
 나중에 공개에서 비공개로 돌리는 것보다 처음부터 private인 쪽이 싸다.
 private repo는 `gh auth` 세션이나 `GIT_TOKEN=<pat>` 없이는 클론되지 않는다.
 

@@ -31,7 +31,7 @@ _Avoid_: nested command, 하위 명령
 _Avoid_: git submodule, gitlink 포인터 커밋, flow adapter script와 운영 host script를 같은 `scripts/` owner로 취급하기
 
 **Project repo**:
-`projects/` 아래에 매니페스트로 설치되는 별도 repo. operator workspace repo와 설치 방식은 같지만 소유 대상이 다르다 — operator repo는 원격 호스트의 운영을 소유하고, project repo는 Telegram/Actions flow가 아닌 작업 덩어리를 소유한다. 예: `projects/games`는 게임 관련 에이전트 스킬을, `projects/travel`은 여행 계획을, `projects/finance`는 재테크 지식 베이스를, `projects/music`은 AI 음악 제작 지식을, `projects/shopping`은 실구매 판단 워크플로를, `projects/hiking`은 등산 지식과 산행 기록을, `projects/cad`는 CAD 지식과 설계 기록을 소유한다. 일곱 다 private다 — 앞의 셋은 개인 데이터(계정 로스터, 여행 일정, 재무 프로필)를 담고 있고, `music`은 생성곡·가사·취향이, `shopping`은 구매 이력·예산·사이즈가, `hiking`은 GPS 경로·체력 수치·장비 이력이, `cad`는 집 실측 치수·제작 이력이 쌓이면 개인 데이터가 되기 때문이다. operator repo와 달리 매니페스트 등록은 손이 아니라 `repo-sync.sh`가 한다.
+`projects/` 아래에 매니페스트로 설치되는 별도 repo. operator workspace repo와 설치 방식은 같지만 소유 대상이 다르다 — operator repo는 원격 호스트의 운영을 소유하고, project repo는 Telegram/Actions flow가 아닌 작업 덩어리를 소유한다. 예: `projects/games`는 게임 관련 에이전트 스킬을, `projects/travel`은 여행 계획을, `projects/finance`는 재테크 지식 베이스를, `projects/music`은 AI 음악 제작 지식을, `projects/shopping`은 실구매 판단 워크플로를, `projects/hiking`은 등산 지식과 산행 기록을, `projects/cad`는 CAD 지식과 설계 기록을, `projects/voice-agent`는 음성 에이전트 지식과 에이전트별 기록을 소유한다. 여덟 다 private다 — 앞의 셋은 개인 데이터(계정 로스터, 여행 일정, 재무 프로필)를 담고 있고, `music`은 생성곡·가사·취향이, `shopping`은 구매 이력·예산·사이즈가, `hiking`은 GPS 경로·체력 수치·장비 이력이, `cad`는 집 실측 치수·제작 이력이, `voice-agent`는 통화 녹음·전사·목소리가 쌓이면 개인 데이터가 되기 때문이다. operator repo와 달리 매니페스트 등록은 손이 아니라 `repo-sync.sh`가 한다.
 _Avoid_: operator workspace repo와 동일 취급, hub의 flow로 취급, `ops/` 아래 배치, `projects/` 항목을 손으로 매니페스트에 적기
 
 **Upstream tool repo**:
