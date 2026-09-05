@@ -9,6 +9,15 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 # Log
 
+## 2026-09-05
+
+- `projects/cad` private repo 추가. FreeCAD 지식(축적층 `knowledge/`)과 설계 한 건(산출층
+  `designs/<날짜>-<slug>/`)을 디렉터리로 가르는 규율만 먼저 세우고 내용은 비워 두었다. 도구는
+  FreeCAD 하나다 — 1.0 에서 Assembly 가 내장되고 Arch 가 BIM 으로 합쳐져 3D 프린팅 부품·Python
+  생성·가구·인테리어 세 하위 도메인이 한 도구에 들어왔고, `knowledge/` 는 도메인이 아니라 질문
+  단위로 가른다. 매니페스트 등록은 `bash ops/repo-sync.sh` 자동 등록으로 했다. private 인 이유는
+  `hiking` 과 같은 축이다: 집 실측 치수·평면도·제작 이력이 쌓이면 개인 데이터가 된다.
+
 ## 2026-08-30
 
 - `projects/hiking`이 `projects/travel`의 조사 프로토콜을 이식했다. 계절 게이트 → 공식
