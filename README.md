@@ -147,10 +147,11 @@ DGX Spark 작업은 종류에 상관없이 `hermes-workspace/knowledge/runbooks/
 | `projects/shopping/` | [BoBeenLee/shopping](https://github.com/BoBeenLee/shopping) | `skills/smart-shopping/` | 건별 구매 판단 | `skills/smart-shopping/SKILL.md` |
 | `projects/hiking/` | [BoBeenLee/hiking](https://github.com/BoBeenLee/hiking) | `knowledge/` | `hikes/<날짜>-<산>/` | `CLAUDE.md` |
 | `projects/cad/` | [BoBeenLee/cad](https://github.com/BoBeenLee/cad) | `knowledge/` | `designs/<날짜>-<slug>/` | `CLAUDE.md` |
+| `projects/voice-agent/` | [BoBeenLee/voice-agent](https://github.com/BoBeenLee/voice-agent) | `knowledge/` | `agents/<날짜>-<slug>/` | `CLAUDE.md` |
 
 두 층을 **디렉터리로 가른다.** 축적층은 카테고리가 살아 있는 한 남고, 산출층은 건이 끝나면 참조 기록으로만 남는다. 섞으면 다음 건이 빈 화면에서 시작하거나, 지난 건의 상황 판단이 지식으로 승격돼 버린다.
 
-일곱 다 **private**다. `games`/`travel`/`finance`는 계정 로스터·여행 일정·재무 프로필 같은 개인 데이터를 이미 담고 있고, `music`은 생성곡·가사·취향이, `shopping`은 구매 이력·예산·사이즈가, `hiking`은 GPS 경로·체력 수치·장비 이력이, `cad`는 집 실측 치수·제작 이력이 쌓이면 개인 데이터가 된다. 클론에 `gh auth` 세션이나 `GIT_TOKEN=<pat>`이 필요하다.
+여덟 다 **private**다. `games`/`travel`/`finance`는 계정 로스터·여행 일정·재무 프로필 같은 개인 데이터를 이미 담고 있고, `music`은 생성곡·가사·취향이, `shopping`은 구매 이력·예산·사이즈가, `hiking`은 GPS 경로·체력 수치·장비 이력이, `cad`는 집 실측 치수·제작 이력이, `voice-agent`는 통화 녹음·전사·목소리가 쌓이면 개인 데이터가 된다. 클론에 `gh auth` 세션이나 `GIT_TOKEN=<pat>`이 필요하다.
 
 각 repo가 자기 구조·규율·검증 명령의 단일 진실원이다. hub는 URL과 브랜치만 소유하고 내용은 추적하지 않는다.
 
@@ -159,6 +160,8 @@ DGX Spark 작업은 종류에 상관없이 `hermes-workspace/knowledge/runbooks/
 hub가 공용 조사 프레임워크를 소유하지 않는다. 방법이 필요한 repo가 **이미 방법을 가진 repo에서 가져다 자기 도메인에 맞게 고친다.** `hiking`이 `travel`의 조사 프로토콜(계절 게이트 → 공식 1차 출처 → 영상 전수조사 → stale 게이트 → 3곳 라우팅 → 결정 큐)과 스크립트 3종을 이식한 것이 첫 사례다.
 
 `cad`가 `hiking`의 이식본을 다시 이식한 것이 두 번째 사례이자 첫 두 홉 이식이다. 두 홉을 건너도 실패 기록(표본 30편, 조회수 정렬, 자동 자막 오인식, 무성 영상)이 같이 왔고, 도메인 차이는 다시 갈렸다 — 계절·들머리 대신 도구·버전이 버킷이고, 게이트는 날짜가 아니라 버전·플랫폼이다. `hiking`이 접어 넣었던 stale 게이트 단계는 `travel`의 `plan-trip`에서 다시 펴 왔다. 버전 경계에서 썩는 사실(UI·워크벤치·API)이 두꺼운 도메인이라서다. 이식본이 원본에 없던 것을 찾기도 한다 — `cad`는 검색 결과의 한글 제목이 영어 채널의 자동 번역이라는 것을 잡았는데, `hiking`은 한국어 영상만 다뤄 부딪히지 않았다.
+
+`voice-agent`가 `cad`에서 가져간 것이 세 번째 사례이고, 여기서 처음으로 **이식 대상 자체가 갈렸다.** 앞의 두 번은 조사 프로토콜과 스크립트를 통째로 가져갔지만 `voice-agent`는 `check_links.py`와 값/지식 분리 규율만 가져가고 `survey.py`(영상 전수조사)는 **의도적으로 두고 왔다.** 앞의 셋은 등산로·여행 동선·FreeCAD 워크플로처럼 공식 문서가 얇고 실전 지식이 영상에 있는 도메인이었는데, 음성 에이전트는 1차 출처가 요금 페이지와 약관 페이지고 그 둘은 fetch가 되고 날짜가 찍힌다. 그래서 이식이 "무엇을 가져올까"가 아니라 **"무엇을 두고 올까"를 정하는 일**이 됐다. 안 쓸 스크립트를 가져오면 빈 인프라가 남는다.
 
 이식이 복사보다 나은 이유는 **실패 기록이 같이 온다**는 점이다. `travel`이 "표본 30편으로 결론의 강도가 표본을 넘었다"고 적어 둔 덕분에 `hiking`이 같은 실패를 반복하지 않았다. 대신 도메인 차이는 이식하면서 갈린다 — 여행은 계절이, 등산은 들머리가 강한 신호다.
 
