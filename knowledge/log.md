@@ -9,6 +9,21 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 # Log
 
+## 2026-09-16
+
+- 카톡 봇을 hermes 게이트웨이 **네이티브 채널**로 옮길 수 있는지 조사했다. 된다 — 지금 Discord
+  자체가 플러그인 경로(`hermes_plugins.discord_platform.adapter`)로 돌고, 데몬이 손으로 만든
+  장치 전부에 네이티브 슬롯이 있다. 조사·실측·미결 결정은 hermes-workspace
+  [PR #52](https://github.com/BoBeenLee/hermes-workspace/pull/52) 의
+  `tasks/2026-09-16-kakao-gateway-platform.md`.
+- 전 단계로 배포본 데몬에 `--resume` 를 넣어 before/after 를 쟀다. **끊기던 것은 텍스트가 아니라
+  툴 결과였다** — 데몬의 SQL 재조립이 대화록은 이미 이어 주고 있었다. T1 의 툴 인자에만 있던
+  사실을 T2 가 묻자 새 세션은 `모름`, 재개 세션은 정확히 답했고 재실행이 없어 42초 → 11초였다.
+- 같이 드러난 것 셋: 게이트웨이에 **턴 벽시계 캡이 없다**(`gateway_timeout` 은 idle 전용),
+  `observed` 신뢰 경계 분리가 **fail-open** 이며 텔레그램 소유 문자열 리터럴에 걸려 있다,
+  그리고 DGX 의 Discord 게이트웨이는 connected 지만 **턴을 한 번도 돈 적이 없다**
+  (`gateway_routing` 0행).
+
 ## 2026-09-09
 
 - `cad` 가 두 번째 설계를 냈다. `designs/2026-09-09-phone-cradle` — **대상 기기를 고정하지
