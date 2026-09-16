@@ -210,6 +210,12 @@
       "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
       "computedHash": "eb0e91e84277283dc2b23ed544399e53afd6b5287e5b6929f25fe8aa608e164b"
     },
+    "h3-prompt-writing": {
+      "source": "MiniMax-AI/MiniMax-H3",
+      "sourceType": "github",
+      "skillPath": "skills/h3-prompt-writing/SKILL.md",
+      "computedHash": "77d059b596e34c1139b859bac30fe5049735bdf49acb70cd63ad8f4e7e329f3c"
+    },
     "handoff": {
       "source": "mattpocock/skills",
       "sourceType": "github",
