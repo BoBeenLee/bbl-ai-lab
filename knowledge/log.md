@@ -9,6 +9,44 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 # Log
 
+## 2026-09-18
+
+- **DGX hermes 의 비전 백엔드를 Cloudflare Workers AI 로 옮겼다.** `auxiliary.vision` 이
+  `custom:cfai` + `@cf/qwen/qwen3.8-27b`, 폴백은 OpenRouter `inclusionai/ling-3.0-flash-vl:free`.
+  무료 후보를 전수 실측해 고른 결과다 (합성 영문 OCR·도형, 합성 한국어 공지, 실제 일러스트 3종).
+  계정이 Workers **Free** plan 이라 하루 10,000 neurons 가 공짜고, 실측 610 prompt + 147 completion
+  토큰이 약 68 neurons 이니 **하루 145콜쯤 된다**. 초과하면 `3036` 429 로 거절될 뿐 과금되지 않는다.
+  쫓아낸 로컬 `llama-local` 과 **같은 qwen3.8-27b 인데 6초 대 45~66초**다. 로컬 GPU 가 ComfyUI 와
+  직렬로 도는 값을 그대로 치르고 있었다.
+- **"무료" 는 세 종류였고 그중 하나만 내일도 무료다.** 매일 돌아오는 일일 쿼터(CF 10k neurons,
+  OpenRouter 50콜), 한 번 쓰면 끝인 월 크레딧(HF Inference Providers **월 $0.10**, 이번 조사
+  25콜에 402 로 소진), 이미 0 인 선불 잔액(Gemini 전 모델 `prepayment credits are depleted`,
+  Z.ai 비전 전부 1113). 품질 1위였던 HF 의 Qwen3-VL-235B·DeepSeek-V4-Flash-Vision-Exp 는
+  2~4초에 만점이었지만 이 이유로 후보에서 빠졌다. **모델 목록에 free 라고 적힌 것과 지속 가능한
+  것은 다르고, 가르는 것은 품질이 아니라 쿼터가 리셋되는지 여부다.**
+- **같은 쿼터를 메인 턴에 쓰면 하루 14턴에 끝난다.** CF 응답은 `usage.neurons` 를 직접 준다
+  (23,229 토큰 = 956 neurons, 입력 1k 토큰당 약 41). hermes 는 `1+1?` 같은 빈 턴 하나가 이미
+  **15,255 입력토큰**이라(`--usage-file` 실측) CF 로 돌리면 턴당 약 711 neurons, 10,000 을
+  **14턴**에 태운다. 툴을 부르는 턴은 같은 프롬프트를 콜마다 다시 보내니 그보다 빠르게 준다.
+  같은 프롬프트를 3회 보내도 `cached_tokens: 0` 이라 **프롬프트 캐시도 없다.** 비전 콜은
+  68 neurons 다. 같은 예산에서 **비전 145콜과 채팅 14턴이 맞바꿔진다.** 쿼터제 무료는 프롬프트가
+  작은 경로에만 붙이고, 메인·자식 턴은 무제한 무료 레인에 남긴다.
+- **툴이 보인다고 도는 게 아니다.** 조사 시작 시점에 `vision_analyze` 는 툴 목록에 멀쩡히 있었고
+  `check_vision_requirements()` 도 True 였는데, `llama-local.service` 는 inactive(dead) 라 모든
+  호출이 connection refused 였다. 게이트는 **api_key 유무만 보고 엔드포인트 생존은 안 본다.**
+  "툴이 있다" 는 "백엔드가 산다" 의 증거가 아니다.
+- **hermes 의 `response_format` 자동 복구는 의미가 아니라 문구로 판정한다.** ling 은
+  `does not support feature: structured-outputs` 로 400 을 주는데 `_is_structured_output_rejection()`
+  은 에러 문자열에서 `response_format` 을 찾는다. venv 에서 직접 호출해 False 를 확인했다.
+  자동 재시도가 없으니 `auxiliary.vision.extra_body` 를 비웠다. **복구 로직이 있다는 것과 이
+  에러에 걸린다는 것은 별개고, 확인은 예측이 아니라 그 함수를 부르는 것이다.**
+- **폴백 엔트리에는 `model` 을 반드시 박는다.** 비워 두면 OpenRouter 레인이 `auxiliary.vision.model`
+  에 들어 있던 **gguf 절대경로를 모델명으로** 보낸다(경고 로그로 실증). 로컬 백엔드를 쓰다가
+  클라우드로 폴백하는 구성은 이 누수를 항상 안고 있다.
+- 부수적으로 확인한 전멸 목록: Groq 는 모델 13개 중 **VLM 0개**(기존 폴백 2단이 없는 모델을
+  가리키고 있었다), GitHub Models 는 `410 github_models_retirement_brownout` 으로 은퇴 중,
+  Z.ai 무료는 `glm-4.7-flash` 하나인데 `1210 content.type allowed values: ['text']` 로 텍스트 전용.
+
 ## 2026-09-16
 
 - DGX hermes 가 **같은 ComfyUI 로 노래도 만든다**. MiniMax Music 3 를 `music_generate` /
