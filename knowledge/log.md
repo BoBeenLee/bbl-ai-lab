@@ -40,6 +40,12 @@ timestamp: 2026-06-27T00:00:00+09:00
   `어디 갔어요?` 가 denoise 0.20·0.35 에서 살아남고 종이 질감까지 먹었다. 모두 박스에 이미
   깔려 있는 것들이다. 반대로 ComfyUI 내장 `TextOverlay` 는 폰트 입력이 없어 한글이 두부(□)로
   나온다 — **같은 "한글 깨짐" 으로 보이지만 원인이 다른 두 번째 함정이다.**
+- **글자는 뺄 수 없고 바꿀 수만 있다 — 그리고 나는 같은 덫에 한 층 위에서 또 걸렸다.**
+  영어로 돌린 뒤 첫 카톡 턴은 한글이 0이었는데 가짜 영어가 나왔다(`Egle Fpistpnet`,
+  `Small AI Feak`). 에이전트가 쓴 프롬프트 끝이 `no readable text` 였다 — 위에서 내가
+  "`다른 글자는 전혀 없다` 가 그려진다" 고 적어 놓고, 같은 부정문을 영어로 쓴 것을 그냥
+  통과시켰다. 채팅 UI 를 빼도 안 고쳐진다(모델이 포스터 제목으로 자리를 옮긴다).
+  **문자열을 하나하나 따옴표로 지정해야** 고쳐진다. 지정한 영어 문자열은 정확히 나온다.
 - 실측 표 전체와 대안 조사(Ideogram 4, Flux.1-dev, Qwen-Image 계열, AnyText, Glyph-SDXL-v2,
   Krea2 control LoRA 현황)는 hermes-workspace
   `knowledge/runbooks/hangul-in-generated-images.md` 가 소유한다.
