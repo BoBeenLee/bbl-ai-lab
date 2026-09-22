@@ -9,6 +9,35 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 # Log
 
+## 2026-09-22
+
+- **컨테이너는 카톡 제어의 이음매가 아니었다.** "맥에 redroid 가 안 되니 DGX 구성은 이식
+  불가" 라는 앞선 판단을 뒤집었다. 전송 경로가 둘인데 HTTP/WS 절반은 `iris_base_url` 설정 키
+  하나로 끝나고, 컨테이너 의존은 `docker exec` 7곳에 몰려 있어 `_docker`/`_docker_stdin` 두
+  함수와 `frida/driver.py` 두 줄이 전부다. 그리고 그 `docker exec` 는 **DGX 에 `adb` 가 없어서
+  고른 우회**였다. AVD 에서는 환경변수 복제 shim, tar-over-exec 파일 주입, binder bind mount,
+  lmkd 워치독이 통째로 사라진다. 설계는 hermes-workspace
+  [PR #70](https://github.com/BoBeenLee/hermes-workspace/pull/70) 의
+  `knowledge/runbooks/iris-on-mac-avd.md`. 아직 실행 전이고 측정된 사실과 계획을 문서 안에서
+  갈라 표시했다.
+
+- **기기 슬롯 규칙은 계정 단위라 별도 계정이면 벗어난다.** DGX 컨테이너는 기존 계정의 *보조*
+  기기였기 때문에 `ro.product.model/brand/manufacturer` 를 삼성 태블릿으로 바꾸고 QR 로그인을
+  해야 했다. 새 계정에서는 AVD 가 **주 모바일 기기**가 되므로 그 사다리 전체가 필요 없다 —
+  SMS 로그인 한 번이다. "에뮬 로그인이 폰을 밀어낸다" 도 같은 계정 안의 규칙이었다.
+
+- **런타임이 repo 보다 앞서 있다는 기록이 낡았고, 함정은 상류가 아니라 로컬이었다.** DGX
+  `~/.hermes/kakao-ai-chat/` 의 `kakao_ai_chat.py`(2917줄)와 `iris_client.py`(672줄)는
+  `origin/main` `1ce2e05` 와 **md5 동일**이다. 이 맥에 hermes-workspace 체크아웃이 둘 있고
+  (`mygit/hermes-workspace` 와 매니페스트 클론 `bbl-ai-lab/hermes-workspace`) 양쪽 `main` 이
+  PR #69 이전을 가리키고 있어서 런타임이 611줄 앞선 것처럼 보였다. **repo 에 무엇이 있는지
+  단정하기 전에 `git fetch` 하고, 서 있는 체크아웃이 둘 중 어느 쪽인지 확인한다.**
+
+- 회사 맥에서 상시 가동을 계획할 때 먼저 재야 하는 값은 `pmset -g custom` 이다. 이 맥은 MDM 이
+  AC 에서 `sleep 1` 을 강제하고 있어 상시 가동 요구와 정면 충돌한다. `caffeinate -s` 가 이기는지
+  확인하는 것이 나머지 작업의 선행 조건이고, 이기지 못하면 상시는 포기하고 필요할 때 기동으로
+  물러나야 한다.
+
 ## 2026-09-20
 
 - **카톡 이미지의 한글 깨짐은 인코딩 버그가 아니었다.** ComfyUI `SaveImage` 시점에 픽셀이
