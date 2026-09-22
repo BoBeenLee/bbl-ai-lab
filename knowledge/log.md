@@ -38,6 +38,43 @@ timestamp: 2026-06-27T00:00:00+09:00
   확인하는 것이 나머지 작업의 선행 조건이고, 이기지 못하면 상시는 포기하고 필요할 때 기동으로
   물러나야 한다.
 
+- **코어를 고치지 않고도 됐던 이유는 훅이 러너 자체를 넘겨주기 때문이다.** 카톡 어댑터는
+  바운드 메시지 핸들러만 받아 게이트웨이 러너에 닿을 길이 없어 보였고, 그래서 벽시계 캡을
+  코어에 넣었다가 되돌렸었다. `pre_gateway_dispatch` 훅의 `gateway=` 인자가 그 러너다.
+  거기서 `_session_key_for_source` 로 세션 키→방 맵을 만들고, `_peek_session_state(key).turn.
+  started_ts` 로 턴 나이를 읽고, `/stop` 이 쓰는 `_interrupt_and_clear_session` 으로 끊는다.
+  하트비트를 끈 뒤 남았던 넷 — 느린 툴의 "약 N분" 한 줄(플러그인 버스 `emit("eta")` →
+  어댑터 구독), 3600초 하드캡(실측 100초 캡에 101초 컷), `<CPA_DONE>` 가드, 승인 댓글 스코프 —
+  가 전부 `plugins/kakao/adapter.py` 안에서 끝났다. hermes-workspace
+  [PR #79](https://github.com/BoBeenLee/hermes-workspace/pull/79).
+
+- **`<CPA_DONE>` 은 환각이 아니라 입력 모양에 대한 모델의 결정적 반응이었다.** 앞선 기록의
+  "hermes 트리에 없는 문자열 = 환각" 은 절반만 맞았다. state.db 5건이 전부 같은 모양이다 —
+  사용자가 "다른 말은 하지 마 / 결과만" 으로 말수를 막았고 툴 결과가 빈 출력이었다. 답할 말을
+  주면(`'작업끝' 이라고 답해`) 그대로 답한다. nex-n2.5-pro 의 "할 말 없음" 토큰이다.
+  처리는 `transform_llm_output` 으로 답 전체가 `<TAG>` 하나일 때만 `완료.` 로 바꾸고,
+  transcript 에는 원문이 남아 재발이 계속 보인다. 재현 턴에서 transcript `<CPA_DONE>`,
+  방 `[jarvis] 완료.`.
+
+- **`/approve` 는 방 사이가 아니라 댓글 안에서 어긋났다.** 큐가 세션 키 단위라 두 방이 동시에
+  물어도 섞이지 않는다. 함정은 승인 프롬프트가 멘션 아래 댓글로 달리는데 거기서 친 `/approve`
+  가 `thread_id` 를 얻어 `room:thread` 키가 되고, 그 세션엔 pending 이 없어 "nothing pending"
+  이 되는 것이었다. 스레드 키에 pending 이 없고 방 키에 있으면 방 스코프로 바꾼다. 남는 모호함은
+  한 턴이 위험 명령 둘을 동시에 올릴 때 오래된 것부터 푸는 것 하나이고, 그건 코어 소유다.
+
+- **데몬이 env 로 심던 방·스레드를 게이트웨이는 세션 컨텍스트로 이미 준다.** 노래 두 툴은
+  게이트웨이에서 배달이 안 되고 있었다 — 배달자가 `COMFYUI_OUTBOX_DIR/CHAT_ID/SEND_BIN` 이
+  있을 때만 뜨고, 그 env 는 데몬이 턴마다 심던 것이라 유닛엔 없다. 독스트링의 "None is the
+  gateway" 는 설계가 아니라 빈 자리였다. `gateway/session_context.py` 의
+  `HERMES_SESSION_CHAT_ID / THREAD_ID / MESSAGE_ID` 가 툴 스레드에 상속되는 ContextVar 로 같은
+  사실을 주므로, `gateway_target()` 이 그걸로 `(outbox, chat_id, send.py, thread)` 를 만들고
+  분리 워커는 `plugins/kakao/send.py` 를 데몬의 `--send-to/--text` 계약 그대로 부른다(첫 줄
+  울타리만 해석, `~/.hermes/{cache,yue2,…}` 아래만). 앵커는 어댑터 규칙 `thread_id or message_id`
+  라 곡이 몇 분 뒤에 와도 멘션의 댓글에 붙는다. 실측 `music_generate` 30초 곡 +175초,
+  `music_cover` +602초, 둘 다 댓글 안. `image_generate` 는 게이트웨이에서 일부러 동기 그대로다.
+  [PR #79](https://github.com/BoBeenLee/hermes-workspace/pull/79),
+  [PR #80](https://github.com/BoBeenLee/hermes-workspace/pull/80).
+
 ## 2026-09-20
 
 - **카톡 이미지의 한글 깨짐은 인코딩 버그가 아니었다.** ComfyUI `SaveImage` 시점에 픽셀이
