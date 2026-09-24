@@ -41,6 +41,28 @@ timestamp: 2026-06-27T00:00:00+09:00
   `-p --resume` 을 둔다. 상주로 바꾸면 두뇌별 장기 실행 프로토콜과 재시작 복구를 새로 짜야 한다.
   카톡이 아니어도 되면 orca 모바일 자체가 에뮬레이터 없이 된다(Orca 로그인은 Relay 에만 필요).
 
+- **그래도 실행 방식은 orca 식 상주로 바꿨다(위 "턴당 `-p --resume` 을 둔다" 를 뒤집는다).** orca 소스를
+  다시 보면 기본 런타임은 전 에이전트 PTY + yolo 이고, 카톡에 옮길 만한 structured 런타임(claude Agent SDK,
+  `codex app-server`)은 실험 기능이다. 그 모양을 SDK 없이 옮겼다.
+  - 방마다 워커 하나가 `jobs/<chat_id>/` 대기열을 비운다.
+  - claude(`--input-format stream-json --permission-prompt-tool stdio`), codex(`app-server`),
+    opencode(`acp`)는 대화마다 프로세스 하나를 10분 유휴까지 살려 둔다.
+  - 라이브에서 첫 턴은 42초, 같은 프로세스로 간 다음 턴은 2초였다.
+  - 권한은 yolo 다. `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` 가 bypass 까지 default 로 되돌려서(실측) ask 가 전부
+    stdio 로 오고, 데몬이 allow 로 답한다. 프로세스 안에서 도는 Write/Edit 만 방 밖을 막는다. 안 막으면 오픈채팅
+    주입 한 줄이 트리거 id 를 바꾼다.
+  - [kakao-agent PR #2](https://github.com/BoBeenLee/kakao-agent/pull/2).
+
+- **라이브에서만 보인 함정 넷.**
+  - python.org 판 macOS Python 은 CA 묶음이 없어 카카오 CDN https 가 전부 실패했다. 체인은 정상이고 curl 은
+    되는데 python 만 `self-signed certificate in chain` 을 낸다.
+  - 카톡 사진 화질이 원본이면 보낼 때마다 확인창이 떠서 사진이 멈춘다. 늦게 나가면 Frida 스레드 힌트(60초)가
+    만료돼 댓글 밖으로 간다.
+  - 공유 계정에서 봇 사진은 접두가 없어 주인 사진으로 되먹었다. 태블릿에서 봇의 인텐트 전송은 origin
+    `POST`, 폰에서 온 것은 `MSG`·`MCHATLOGS` 라 이걸로 가른다.
+  - opencode acp 는 불러온 세션의 모델을 그대로 써서, 설정만 바꾸면 전 모델이 답한다.
+    `session/set_config_option` 으로 세션에 건다.
+
 - **두뇌 CLI 중 1차 구독 로그인 + OS 샌드박스 + 세션 재개 + JSON 이벤트를 다 갖춘 건 Claude Code 와
   Codex 뿐이다.** Gemini 는 무료지만 기본 샌드박스가 읽기·네트워크를 다 열어 두고, 0.41.2 는 신뢰 안 된
   폴더에서 `--approval-mode yolo` 를 default 로 되돌린다. opencode 는 OS 샌드박스가 없다. 그래서 둘은
