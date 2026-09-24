@@ -52,6 +52,10 @@ repositories:
     url: https://github.com/BoBeenLee/promo-agent.git
     path: projects/promo-agent
     branch: main
+  - name: kakao-agent
+    url: https://github.com/BoBeenLee/kakao-agent.git
+    path: projects/kakao-agent
+    branch: main
 ---
 
 # 운영 repo 목록

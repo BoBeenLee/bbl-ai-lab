@@ -149,10 +149,11 @@ DGX Spark 작업은 종류에 상관없이 `hermes-workspace/knowledge/runbooks/
 | `projects/cad/` | [BoBeenLee/cad](https://github.com/BoBeenLee/cad) | `knowledge/` | `designs/<날짜>-<slug>/` | `CLAUDE.md` |
 | `projects/voice-agent/` | [BoBeenLee/voice-agent](https://github.com/BoBeenLee/voice-agent) | `knowledge/` | `agents/<날짜>-<slug>/` | `CLAUDE.md` |
 | `projects/promo-agent/` | [BoBeenLee/promo-agent](https://github.com/BoBeenLee/promo-agent) | `knowledge/`, `research/` | `campaigns/<날짜>-<slug>/` | `CLAUDE.md` |
+| `projects/kakao-agent/` | [BoBeenLee/kakao-agent](https://github.com/BoBeenLee/kakao-agent) | `knowledge/` | 없음 (대화·세션은 호스트의 `~/kakao-agent/` 에만) | `CLAUDE.md` |
 
 두 층을 **디렉터리로 가른다.** 축적층은 카테고리가 살아 있는 한 남고, 산출층은 건이 끝나면 참조 기록으로만 남는다. 섞으면 다음 건이 빈 화면에서 시작하거나, 지난 건의 상황 판단이 지식으로 승격돼 버린다.
 
-아홉 다 **private**다. `games`/`travel`/`finance`는 계정 로스터·여행 일정·재무 프로필 같은 개인 데이터를 이미 담고 있고, `music`은 생성곡·가사·취향이, `shopping`은 구매 이력·예산·사이즈가, `hiking`은 GPS 경로·체력 수치·장비 이력이, `cad`는 집 실측 치수·제작 이력이, `voice-agent`는 통화 녹음·전사·목소리가, `promo-agent`는 커뮤니티에서 수집한 제3자의 글·닉네임·동네가 쌓이면 개인 데이터가 된다. 클론에 `gh auth` 세션이나 `GIT_TOKEN=<pat>`이 필요하다.
+열 다 **private**다. `games`/`travel`/`finance`는 계정 로스터·여행 일정·재무 프로필 같은 개인 데이터를 이미 담고 있고, `music`은 생성곡·가사·취향이, `shopping`은 구매 이력·예산·사이즈가, `hiking`은 GPS 경로·체력 수치·장비 이력이, `cad`는 집 실측 치수·제작 이력이, `voice-agent`는 통화 녹음·전사·목소리가, `promo-agent`는 커뮤니티에서 수집한 제3자의 글·닉네임·동네가, `kakao-agent`는 주인·봇 계정 id 와 방 id 가 쌓이면 개인 데이터가 된다. 클론에 `gh auth` 세션이나 `GIT_TOKEN=<pat>`이 필요하다.
 
 각 repo가 자기 구조·규율·검증 명령의 단일 진실원이다. hub는 URL과 브랜치만 소유하고 내용은 추적하지 않는다.
 

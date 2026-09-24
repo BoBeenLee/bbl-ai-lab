@@ -9,6 +9,43 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 # Log
 
+## 2026-09-24
+
+- **카톡 봇의 두뇌를 고를 수 있게 새 비공개 repo 로 뺐다.** `projects/kakao-agent`
+  ([BoBeenLee/kakao-agent](https://github.com/BoBeenLee/kakao-agent)). hermes-workspace@672dab3 의
+  카톡 데몬·Iris 클라이언트·Frida 후크를 원본 그대로 첫 커밋으로 가져오고, 그 위에서 두뇌를 턴마다
+  도는 로컬 에이전트 CLI 하나(`claude -p`, `codex exec`, `gemini -p`, `opencode run`)로 바꿨다.
+  DGX 는 이미 이 데몬을 게이트웨이 플러그인으로 대체했으니 갈라질 원본이 없고, hermes-workspace 와
+  DGX 는 한 줄도 안 바뀐다. 호스트는 회사 Mac 이 아니라 Mac Hermes 맥북이다.
+
+- **Claude Desktop 에는 외부 메신저가 작업을 시작시키는 공식 경로가 없다.** Channels 는 CLI 전용이고,
+  Remote Control·Dispatch 는 claude.ai/code·Claude 앱만 입력으로 받고, `claude://code/new?q=` 딥링크는
+  채우기만 하고 전송은 사람이 한다. Desktop 안에서는 열린 세션이 스스로 폴링·감시하는 형태만 되고
+  앱이 열려 있고 맥이 깨어 있어야 한다. 상시 봇은 CLI 데몬이다. Remote Control 은 `setup-token`
+  토큰으로는 켜지지도 않는다.
+
+- **GitHub 에 Iris↔Claude 직결도, 카톡용 Claude Code Channels 플러그인도 없다.** 가장 많이 쓰이는
+  범용 브리지(openclaw 의 `claude-cli` 백엔드)가 우리와 같은 턴당 `-p --resume` 이라 설계는 그대로 두고
+  함정 대응만 가져왔다 — 프롬프트는 stdin, env 는 명시 목록만(`-p` 는 `ANTHROPIC_API_KEY` 가 있으면
+  구독보다 먼저 쓴다), 최종 결과 이벤트가 오면 프로세스 그룹째 종료, cwd 의 `.claude/settings.json`·
+  `.mcp.json` 을 신뢰 확인 없이 올리는 걸 `--setting-sources user --strict-mcp-config` 로 막는다.
+
+- **두뇌 CLI 중 1차 구독 로그인 + OS 샌드박스 + 세션 재개 + JSON 이벤트를 다 갖춘 건 Claude Code 와
+  Codex 뿐이다.** Gemini 는 무료지만 기본 샌드박스가 읽기·네트워크를 다 열어 두고, 0.41.2 는 신뢰 안 된
+  폴더에서 `--approval-mode yolo` 를 default 로 되돌린다. opencode 는 OS 샌드박스가 없다. 그래서 둘은
+  데몬이 가진 Seatbelt 프로필로 감싸고, claude·codex 는 감싸지 않는다 — 샌드박스 안의 프로세스는
+  `sandbox-exec` 를 다시 못 연다.
+
+- **Seatbelt 에서 배운 것 둘.** `realpath` 는 조상 폴더의 메타데이터를 읽어야 해서 다른 두뇌 홈을
+  `file-read*` 로 막으면 제 홈도 못 푼다 — 내용만(`file-read-data`) 막는다. 그리고 나중에 쓴
+  `allow file-read*` 는 먼저 쓴 `deny file-read-data` 를 되돌리지 못한다 — 연산을 하나씩 적어야 한다.
+
+- **계획을 코드와 대조해 잡은 함정 셋.** `adb shell` 은 인자를 따옴표 없이 이어 붙여 `sh -c "…"` 가
+  기기에서 쪼개지고, 힌트 파일이 빈 채로 종료코드 0 이 나와 사진이 조용히 댓글 밖으로 간다(인자마다
+  `shlex.quote`). 데몬의 주인 키는 `trigger_user_ids` 이고 게이트웨이의 `allowed_users` 는 조용히
+  버려진다. 봇 홈을 `~/.hermes` 아래에 두면 `~/.hermes/**` 읽기 거부가 더 구체적인 허용보다 먼저라
+  자기 폴더도 못 읽는다.
+
 ## 2026-09-22
 
 - **컨테이너는 카톡 제어의 이음매가 아니었다.** "맥에 redroid 가 안 되니 DGX 구성은 이식
