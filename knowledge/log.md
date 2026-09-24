@@ -30,6 +30,17 @@ timestamp: 2026-06-27T00:00:00+09:00
   구독보다 먼저 쓴다), 최종 결과 이벤트가 오면 프로세스 그룹째 종료, cwd 의 `.claude/settings.json`·
   `.mcp.json` 을 신뢰 확인 없이 올리는 걸 `--setting-sources user --strict-mcp-config` 로 막는다.
 
+- **orca 모바일처럼 에뮬레이터 없이 카톡을 붙이는 길은 없다.**
+  [stablyai/orca](https://github.com/stablyai/orca/tree/122b8c25d7c16f76e395bf9a65887d7c4bc5003b) 는
+  폰 앱, Orca Relay(E2EE), 데스크톱이 여는 WebSocket RPC(포트 6768)를 다 직접 만들었다. 카톡은 앱도
+  서버도 카카오 것이라 Mac 을 가리킬 설정이 없어, 카톡 계정으로 로그인한 클라이언트(AVD + Iris)가 그
+  수신구 자리를 대신한다. kakao-agent 가 이미 그 모양이고, orca 를 사이에 끼워도 이 자리는 남는다.
+  다른 건 실행 방식뿐이다. orca 는 세션마다 claude 가 떠 있고(PTY 의 TUI, 또는 Agent SDK 스트리밍
+  입력) 턴 도중 권한·질문을 폰에서 받는다(SDK 경로는 `canUseTool`, 곧 `--permission-prompt-tool
+  stdio`. 기본은 `bypassPermissions`). 우리는 권한을 샌드박스 안에 미리 정해 물을 게 없으니 턴당
+  `-p --resume` 을 둔다. 상주로 바꾸면 두뇌별 장기 실행 프로토콜과 재시작 복구를 새로 짜야 한다.
+  카톡이 아니어도 되면 orca 모바일 자체가 에뮬레이터 없이 된다(Orca 로그인은 Relay 에만 필요).
+
 - **두뇌 CLI 중 1차 구독 로그인 + OS 샌드박스 + 세션 재개 + JSON 이벤트를 다 갖춘 건 Claude Code 와
   Codex 뿐이다.** Gemini 는 무료지만 기본 샌드박스가 읽기·네트워크를 다 열어 두고, 0.41.2 는 신뢰 안 된
   폴더에서 `--approval-mode yolo` 를 default 로 되돌린다. opencode 는 OS 샌드박스가 없다. 그래서 둘은
