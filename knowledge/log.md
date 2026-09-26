@@ -9,6 +9,24 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 # Log
 
+## 2026-09-26
+
+- **kakao-agent 의 claude 가 이제 Claude Code 세션처럼 기억한다.** claude CLI 의 auto memory 는 기본으로
+  켜져 있고 `-p` 에서도 돈다. 봇의 claude(2.1.282)는 세션마다 쓰기 가능판 "# Memory" 절로
+  `brains/claude/projects/<방>/memory/` 에 적으라는 지시를 받았지만, 그 폴더가 봇 자신의
+  `Read/Edit(~/kakao-agent/brains/**)` 거부 안이라 한 번도 저장되지 않았다(방마다 빈 폴더). 설정
+  `autoMemoryDirectory` 를 `~/kakao-agent/memory/claude` 로 옮겨 모든 방이 한 폴더를 쓴다. 규칙은 주인
+  결정대로 CLI 의 절 그대로이고 카톡용 기억 규칙은 없다. 봇 규칙의 "다른 폴더는 읽기만" 이 그 절과 부딪혀
+  memory 폴더만 풀었다.
+  - 프로브(가짜 방, Haiku, 발신 없음): 한 턴에 기억 파일과 `MEMORY.md` 한 줄, 거부 0. 세션을 버린 새
+    프로세스가 대화 문맥 없이 기억으로 답했다(6초). 두뇌는 방 기억의 파일 이름과 설명에 chat_id 를 스스로 넣었다.
+  - codex(`memories` 는 6시간 지난 대화를 백그라운드로 요약)와 opencode(기능 없음)는 기억이 없다. 워커가
+    MCP `memory` 도구로 세 두뇌에 같은 기억을 주는 설계(Hermes `memory` 도구 이식)도 짰지만 주인이 내장을 골랐다.
+  - 이 세션 동안에도 다른 세션들이 kakao-agent 에 #28·#29·#30 을 머지했고 데몬도 두 번 재시작됐다(19:27,
+    19:46). 그래서 배포 전에 호스트 소스 사본을 main 의 여러 커밋과 파일별 md5 로 대조해, 남이 머지하지 않고
+    배포한 것이 없는지 확인했다.
+  - [kakao-agent PR #31](https://github.com/BoBeenLee/kakao-agent/pull/31).
+
 ## 2026-09-24
 
 - **카톡 봇의 두뇌를 고를 수 있게 새 비공개 repo 로 뺐다.** `projects/kakao-agent`
