@@ -27,6 +27,18 @@ timestamp: 2026-06-27T00:00:00+09:00
     배포한 것이 없는지 확인했다.
   - [kakao-agent PR #31](https://github.com/BoBeenLee/kakao-agent/pull/31).
 
+- **그 기억을 부른 사람(user_id)마다 한 폴더로 나눴다.** 배포 직후 나와의 채팅에서 "기억해 둬" 가 "저장을 못
+  했다" 로 끝났다. claude 는 기억 폴더 위치를 세션 첫 메시지에서 한 번만 듣는데, 재개한 옛 세션이 옛 경로에
+  쓰다가 거부됐다. 그래서 폴더를 바꾸면 세션도 새로 시작해야 한다. 주인 요청대로 트리거의 `author_id`(예약은 주인)가
+  턴마다 `--settings` 로 `memory/claude/<user_id>/` 를 받고, 세션과 상주 프로세스도 부른 사람마다 둔다.
+  봇을 부를 수 있는 사람(`trigger_user_ids`)은 여전히 주인뿐이다. 사람을 넣으면 그 사람이 주인 권한을 그대로
+  갖는데, 폴더 분리는 claude Bash 에 샌드박스가 없어 경계가 되지 못한다.
+  - 프로브(가짜 방, 가짜 호출자 둘, Haiku): A 의 기억은 A 폴더에만 생기고, B 는 "모르겠습니다", A 의 새 세션은
+    기억으로 답했다. `--settings` 가 설정 파일의 `autoMemoryDirectory` 보다 앞선다는 것도 여기서 확인했다.
+  - 배포 전 대조에서 다른 세션이 머지 없이 배포한 PR #35 가 보여 배포를 멈췄고, 주인이 #35 를 머지한 뒤 main 을
+    배포했다. 주인 기억 파일은 `135397747/` 로 옮기고, 주인 claude 세션 포인터 9개는 치웠다.
+  - [kakao-agent PR #34](https://github.com/BoBeenLee/kakao-agent/pull/34).
+
 ## 2026-09-24
 
 - **카톡 봇의 두뇌를 고를 수 있게 새 비공개 repo 로 뺐다.** `projects/kakao-agent`
