@@ -30,6 +30,30 @@ timestamp: 2026-06-27T00:00:00+09:00
   - [kakao-agent PR #39](https://github.com/BoBeenLee/kakao-agent/pull/39),
     [kakao-agent PR #40](https://github.com/BoBeenLee/kakao-agent/pull/40).
 
+- **kakao-agent 가 웹이 더 잘 전달하는 답을 Cloudflare Pages 에 올리고 링크로 준다.** 카톡 첨부로는 여러
+  표·그림·링크가 섞인 답과 눌러 보는 것(체크리스트, 계산기)을 폰에서 제대로 못 보고, 카톡 파일은 14일 뒤
+  만료된다. 워커의 MCP 서버에 `publish`, `unpublish` 를 붙였다. 두뇌가 `./out/<이름>/index.html` 을 만들면
+  주인의 Pages 프로젝트(`agent-share-ibvynd`)에 미리보기 배포로 올린다. 올릴 때마다 새 주소
+  (`<hash>.agent-share-ibvynd.pages.dev`)이고 기본 noindex 다. 언제 웹으로 할지는 두뇌가 판단하고, 주인이
+  시키지 않아도 된다. 글만 긴 답은 지금처럼 md 파일로 넘긴다. 둘 다 주인 결정이다.
+  - 호스트는 공식 문서로 대조해 골랐다. Vercel Hobby 는 배포를 30일 뒤 지우고 기본 로그인 벽이 있다. Netlify 새
+    무료 계정은 월 300 크레딧(프로덕션 배포 15)이고 다 쓰면 모든 사이트가 멈춘다. Surge 는 토큰이 계정 전체이고
+    noindex 가 없다. GitHub Pages 는 무료면 공개 repo 가 필요하다. 차선은 Workers 정적 자산이다(배포 하나를
+    지우는 API 가 없다).
+  - Pages 는 파일 업로드 REST 가 문서에 없어 버전 고정 wrangler(4.141.0)를 부른다. 4.108 이상은 `CLAUDECODE`
+    같은 AI 에이전트 env 를 감지하면 없는 프로젝트를 Pages 대신 Worker 로 만든다. 그래서 새 env 와 `--force` 로
+    부르고, 프로젝트는 주인이 대시보드에서 만든다.
+  - 주인은 `cloudflare_ai.json`(그림 폴백 키, 두뇌도 읽는다)에 어드민 토큰이 있다고 알고 있었다. 실측해 보니
+    Workers AI 전용이었다(Pages API `10000 Authentication error`). 그래서 그 토큰이 계정 전체를 넘길 위험은
+    원래 없었다. 주인이 Pages Edit 를 더한 뒤로 돌아간다.
+  - 프로브(설치본, 가짜 방, 발신 없음):
+    - 두뇌 없이: 올리기 8.8초, 내리기 1.1초. 카톡 UA 로 200 과 noindex 가 왔다.
+    - Haiku 턴: "할 일 체크할 수 있게" 는 시키지 않아도 체크박스 페이지(og 태그 포함)를 올렸다. 양자컴퓨터 설명과
+      1+1 은 카톡 글로 답했다. "이 페이지 내려줘" 는 unpublish 했다.
+    - Cloudflare 는 파이썬 기본 User-Agent 를 403 으로 막는다. 페이지 문제가 아니다. 내린 주소는 10초 안에 404
+      가 됐다.
+  - [kakao-agent PR #41](https://github.com/BoBeenLee/kakao-agent/pull/41).
+
 ## 2026-09-26
 
 - **kakao-agent 의 claude 가 이제 Claude Code 세션처럼 기억한다.** claude CLI 의 auto memory 는 기본으로
