@@ -9,6 +9,27 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 # Log
 
+## 2026-09-27
+
+- **kakao-agent 가 주인의 프로젝트를 이 허브로 본다.** 프로젝트마다 봇용 입구 스킬을 만들지 않고, 봇 호스트
+  (Mac Hermes)에 이 허브를 매니페스트 14개와 함께 통째로 클론해 두었다(`~/bbl-ai-lab`, 1.1 GB). 봇 규칙의
+  "주인의 프로젝트" 절이 거기를 가리키고, 두뇌는 `ops/repos.md` 와 AGENTS.md 의 레포 설명으로 레포를 고른 뒤 그
+  레포의 CLAUDE.md 나 README.md 를 따라 읽기만 한다. 그래서 AGENTS.md 의 레포 설명과 각 레포의 입구 문서가 곧
+  봇이 답하는 근거다. 호스트 사본 갱신은 주인 결정으로 수동이다.
+  - 호스트의 옛 허브 사본(`~/Documents/mygit/bbl-ai-lab`, PR #37 시절)은 쓰지 않았다. 사용자 TCC.db 의 Documents
+    허용에 데몬의 python3 가 없다. ssh 로 읽히는 건 `sshd-keygen-wrapper` 가 전체 디스크 권한을 가져서라 증거가 못 된다.
+  - private 레포는 호스트의 gh credential helper 로 클론했다. `GIT_TOKEN` 을 쓰면 토큰이 클론마다 `.git/config` 에
+    남아 두뇌가 읽을 수 있게 된다.
+  - 프로브(설치본 `run_resident`, Haiku 4.5, 가짜 방, 발신 없음): 여행 일정과 "내 원신 로스터" 는 첫 규칙으로 허브를
+    읽고 맞게 답했지만, "원신 나선 비경 파티 추천해줘" 는 허브를 안 보고 웹 일반론을 냈다. 허브 주제면 웹보다 허브를
+    먼저 보고 "내" 가 없는 추천도 주인 것에 맞추라고 고치자, 같은 질문이 party-guide 의 SKILL.md·roster.md·
+    references 를 읽고 그 절차대로 답했다. opencode(무료 mimo, `agent.sb` 안)도 로스터를 읽었다. 끝난 뒤 허브와
+    레포 14개의 `git status` 는 모두 깨끗했다.
+  - claude 는 규칙을 세션 기록에 `attachment` 로 남긴다. 옛 규칙으로 연 세션을 새 규칙으로 재개하면 새 절이 기록에
+    들어가지 않고, 새 세션에서 되는 질문을 못 했다. 규칙이 바뀐 배포는 claude 세션 포인터를 치워야 기존 방에 닿는다.
+  - [kakao-agent PR #39](https://github.com/BoBeenLee/kakao-agent/pull/39),
+    [kakao-agent PR #40](https://github.com/BoBeenLee/kakao-agent/pull/40).
+
 ## 2026-09-26
 
 - **kakao-agent 의 claude 가 이제 Claude Code 세션처럼 기억한다.** claude CLI 의 auto memory 는 기본으로
