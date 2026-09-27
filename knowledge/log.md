@@ -9,6 +9,30 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 # Log
 
+## 2026-09-28
+
+- **kakao-agent 는 글자 그림을 HTML 로 짜서 찍고, 디자인 기준은 봇 호스트에 전역으로 깐 ui-skills 에서 스스로 고른다.**
+  주인이 시킨 휴관 달력 공지가 투박했다. matplotlib 3.10.9 는 Apple SD Gothic Neo 를 `.ttc` 하나의 400 한 벌로만
+  읽어서 `weight='bold'` 가 전부 무시됐다. 두뇌는 좌표를 어림했고, 휴관일마다 빨간 테두리를 둘렀다.
+  - 같은 내용을 같은 디자인과 좌표로 두 방식에 그려 주인에게 보였다. 좌표만 맞으면 matplotlib 도 괜찮았다. 남는
+    차이는 굵기, `–` 글리프, 손으로 박는 배치였다. 그래서 주인 결정으로 둘로 나눴다.
+    - 표, 달력, 공지, 카드, 다이어그램: HTML 로 짜서 방의 agent-browser 로 찍는다.
+    - 축 있는 차트: matplotlib 에 남긴다. Pretendard(굵기별 파일)와 dataviz 스킬의 참조 팔레트로 기본값을 바꿨다.
+  - 봇 호스트(Mac Hermes) `~/.agents/skills` 에 ui-skills 라우터 `ui-skills-root` 와 디자인 스킬 네 개
+    (`baseline-ui`, `better-typography`, `better-layout`, `better-colors`)를 `npx skills -g` 로 깔았다.
+    - 규칙은 스킬 이름을 고정하지 않고 두뇌가 그림에 맞게 고른다. 이것도 주인이 바란 방향이다.
+    - 라우터의 `npx ui-skills` 는 샌드박스가 꺼진 claude 에서만 돈다.
+    - 함정: `-a claude-code` 하나만 주면 CLI 가 `~/.claude/skills` 에 복사만 하고 `~/.agents/skills` 에는 안 둔다.
+      그러면 봇이 못 본다. codex 처럼 `.agents/skills` 를 쓰는 에이전트를 같이 줘야 정본과 링크가 생긴다.
+      ssh heredoc 으로 돌릴 때는 `< /dev/null` 이 없으면 첫 명령이 나머지 스크립트를 먹는다.
+  - 머지 전 프로브(Haiku 4.5, 가짜 방): 경로는 맞았다. 다만 Haiku 는 읽은 `baseline-ui` 가 금하는 그라데이션을
+    썼고 막대마다 다른 색을 칠했다. 그래서 규칙에 두 구절을 더했다.
+  - 배포 뒤 나와의 채팅 실시험(라이브 두뇌 Opus 5.5):
+    - 원래 요청을 다시 시키자 상대 방의 문자를 다시 읽고 `owner:baseline-ui` 를 골라 62초에 새 달력을 냈다. 원문 문자에 없는
+      재개관 날짜는 스스로 뺐다.
+    - 막대그래프는 새 기본값 그대로 12초에 나왔다.
+  - [kakao-agent PR #45](https://github.com/BoBeenLee/kakao-agent/pull/45)(머지 c1c93e3, 2026-09-28 06:29 배포, 데몬 pid 10322).
+
 ## 2026-09-27
 
 - **kakao-agent 가 주인의 프로젝트를 이 허브로 본다.** 프로젝트마다 봇용 입구 스킬을 만들지 않고, 봇 호스트
