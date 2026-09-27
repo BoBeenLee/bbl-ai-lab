@@ -11,6 +11,24 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 ## 2026-09-28
 
+- **DGX `[jarvis]` 를 kakao-agent 기능에 맞춘다(코드와 PR 까지, 배포 전).** kakao-agent 가 09-24 포크 뒤 붙인 것
+  (PR #2~#45)을 DGX 게이트웨이 플러그인(hermes-workspace `plugins/kakao`)으로 옮겼다. 여섯 PR 을 쌓았다: 신뢰성,
+  턴 UX, 방 도구, 톡게시판, 웹 올리기와 그림, 허브와 k-skill.
+  - 대조하다 드러난 DGX 결함 셋. 저장 커서가 있으면 재시작 백로그 상한이 없어, 오래 꺼진 호스트가 밀린 멘션을 전부
+    답했을 것이다. 답장·긴 글 트리거는 조회를 기다리는 동안 다른 행에 커서를 뺏겨 로그 없이 버려졌다. 재시작 중인
+    턴은 방에 아무 말도 남기지 않았다.
+  - Hermes 코어(upstream 2026-09-24)에서 확인한 것:
+    - 시간 기반 세션 리셋이 새 판에서 빠졌고("time never does"), 유휴 압축은 매 턴 활동 시각을 다시 찍어 게이트웨이에서
+      안 터진다. 그래서 3시간 세션 만료는 어댑터가 `reset_session` 으로 맡는다.
+    - queue 모드는 글자 메시지에 대기 안내가 없다. 한국어 로캘(`display.language: ko`)이 있지만 f-string 공지
+      (크론 래퍼, 재시작, clarify 안내)는 어댑터가 바꿔야 한다. 메시지 시각은 `gateway.message_timestamps` 로 켠다.
+  - DGX 는 허용 사용자가 둘이라, 다른 방 읽기·보내기, 게시판 쓰기, 웹 올리기, 허브는 주인 턴에서만 된다.
+  - 배포는 막혀 있다. DGX 가 꺼져 있고, 09-24 에 Mac AVD 가 주인 계정의 태블릿 슬롯을 가져가 DGX 카톡이 로그아웃됐다.
+    계정 배치는 주인이 정한다.
+  - selfcheck 은 코어가 있어야 돈다. DGX 대신 Mac Hermes 의 venv 에 upstream 코어를 `PYTHONPATH` 로 얹어 돌렸다.
+    DGX 코어 판에서는 배포 때 다시 돈다.
+  - [hermes-workspace PR #90~#95](https://github.com/BoBeenLee/hermes-workspace/pull/90) (private, 쌓인 순서대로 머지).
+
 - **kakao-agent 는 글자 그림을 HTML 로 짜서 찍고, 디자인 기준은 봇 호스트에 전역으로 깐 ui-skills 에서 스스로 고른다.**
   주인이 시킨 휴관 달력 공지가 투박했다. matplotlib 3.10.9 는 Apple SD Gothic Neo 를 `.ttc` 하나의 400 한 벌로만
   읽어서 `weight='bold'` 가 전부 무시됐다. 두뇌는 좌표를 어림했고, 휴관일마다 빨간 테두리를 둘렀다.
