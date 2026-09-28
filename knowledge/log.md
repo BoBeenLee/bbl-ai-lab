@@ -11,6 +11,22 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 ## 2026-09-28
 
+- **kakao-agent 가 주인이 시키면 이 허브의 레포를 고친다.** 주인 결정: 브랜치 + PR, 두뇌는 claude·codex·opencode,
+  `hermes-workspace`·`projects/kakao-agent` 는 제외(`ops/openmontage` 는 남의 레포라 원래 제외). 봇 호스트의 클론은
+  main 그대로 두고, 고칠 때마다 `~/kakao-agent/edits` 에 `kakao/<이름>` 워크트리를 파서 고친 뒤 브랜치를 push 하고
+  PR 을 연다. 모든 방이 읽는 내용과 주인의 수동 pull 이 편집에 흔들리지 않게 하려는 것이다. 머지는 주인이 한다.
+  - 샌드박스(`agent.sb`, codex·opencode·gemini)는 허브에서 경로에 `/.git/` 이 든 곳만 쓰기를 연다. 그 안의
+    `hooks/` 와 `config` 는 닫았다. post-merge 훅이나 `core.fsmonitor` 는 주인이 다음에 그 클론에서 pull 할 때
+    샌드박스 밖에서 명령을 돌리기 때문이다. 그래서 두뇌는 `worktree add --no-track` 과 `-u` 없는 push 를 쓴다.
+    `~/.config/gh` 읽기를 열었다. 호스트의 gh 토큰은 평문이고 모든 레포에 닿는다.
+  - main 을 막는 것은 규칙과 claude 거부 규칙뿐이다. GitHub 무료 플랜이라 private 레포는 main 보호를 못 건다
+    (API 403). 샌드박스가 꺼진 claude Bash 에게 거부 규칙은 규칙 수준이다.
+  - 실측(Mac Hermes): 스크래치 클론에서 새 `agent.sb` 로 fetch·`worktree add`·commit·`push --dry-run`·`gh pr list` 가
+    통과하고, 작업 트리·훅·`git config`·`hermes-workspace` 쓰기는 거부됐다. 배포 뒤 가짜 방 Haiku 한 턴이 games 에
+    한 줄 PR 을 절차 그대로(워크트리, `Assisted-by` 커밋, 브랜치 push, `gh pr create`, 워크트리 정리) 42초에 열었다.
+    그 PR(games #5)은 닫고 브랜치를 지웠다.
+  - [kakao-agent PR #47](https://github.com/BoBeenLee/kakao-agent/pull/47).
+
 - **kakao-agent 는 공지, 안내, 행사, 휴무 그림을 앱 카드가 아니라 4:5 포스터로 그린다.**
   - 계기: 같은 날 휴관 달력 공지를 다시 시켰다. ui-skills 를 읽은 첫 판과 라우터까지 돌린 둘째 판이 둘 다 앱 화면
     카드로 나왔다. 주인이 참고 포스터를 보여 준 다섯째 턴에야 포스터가 됐다.
