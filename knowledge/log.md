@@ -11,6 +11,21 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 ## 2026-09-29
 
+- **`projects/blender` 가 개발 Mac 에서 돈다.** Blender 5.2.2 를 공식 dmg 로 `/Applications` 에 깔았다. SHA256 과 공증은 확인했다.
+  blender repo 가 적어 둔 실측 여섯을 재서 작업 템플릿 `templates/build.py` 와 점검 `scripts/check.sh` 를 만들었다.
+  점검은 18개 모두 PASS, 12초다. 일부러 깬 세 경우는 모두 FAIL 과 exit 1 이었다.
+  - 앞선 기록을 실측으로 고쳤다.
+    - `blender` 를 심볼릭 링크로 부르면 파이썬이 뜨지 않는다. 그래서 `exec` 래퍼로 부른다.
+    - mm 장면(`scale_length 0.001`)은 STL 은 맞지만 GLB 가 1000배(40 mm 가 40 m)로 나간다. 그래서 장면은 m 로 두고
+      mm 치수는 `MM` 상수를 곱하며, STL 만 `global_scale=1000` 으로 내보낸다.
+    - 개발 Mac 은 M5 Pro, 48 GB 가 아니라 M3 Pro, 36 GB, macOS 26.6.2 다.
+  - 첫 Cycles Metal 렌더는 커널 컴파일에 125초가 들었다. 그 뒤 1080p 한 장이 METAL 12.8초, CPU 51.6초였다.
+    Metal 은 작은 장면에도 peak memory footprint 가 9.9 GB 였다. 봇 호스트(32 GB, 에뮬레이터 약 10 GB)에 깔 때 볼 값이라
+    blender KB 의 "자원" 에 남겼다. Blender 가 저장소 밖에 쓰는 경로도 같이 적었다. 샌드박스를 열 때 필요하다.
+  - 허브의 두 Blender 선례(remote-comfyui previz, openmontage `blender_world`)는 고치지 않았다. 템플릿은 모양만 가져왔다.
+    봇 연동(D-004)은 여전히 보류다.
+  - [blender PR #1](https://github.com/BoBeenLee/blender/pull/1).
+
 - **`projects/blender` private repo 추가.** 열한 번째 project repo 다. Blender 지식(`knowledge/`)과 작업별 기록
   (`works/<날짜>-<slug>/`)을 소유한다. 매니페스트 등록은 손이 아니라 `repo-sync.sh --list` 의 자동 등록으로 했다.
   - 계기는 kakao-agent 봇의 한 방을 Blender 작업실로 만들어 달라는 요청이었다. 봇은 매 턴 전에 방 작업 폴더의
