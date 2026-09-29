@@ -361,3 +361,4 @@ curl -s "https://api.telegram.org/bot<TG_BOT_TOKEN>/getWebhookInfo" | jq
 - 자율 루프가 건드리면 안 되는 경로는 [docs/safety.md](docs/safety.md)가 binding denylist다. 루프는 denylist에 걸리면 편집 대신 `STATE.md`에 `needs-human`으로 escalate 한다.
 - `worker/wrangler.toml`에는 시크릿을 넣지 않는다. `wrangler secret put`만 사용.
 - 새 flow 추가 시 trigger 가능한 사용자 범위(default = 화이트리스트)와 GitHub Action이 작성/수정하는 자원 범위를 한 번 더 점검할 것.
+probe line
