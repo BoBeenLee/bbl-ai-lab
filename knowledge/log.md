@@ -9,6 +9,21 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 # Log
 
+## 2026-09-29
+
+- **`projects/blender` private repo 추가.** 열한 번째 project repo 다. Blender 지식(`knowledge/`)과 작업별 기록
+  (`works/<날짜>-<slug>/`)을 소유한다. 매니페스트 등록은 손이 아니라 `repo-sync.sh --list` 의 자동 등록으로 했다.
+  - 계기는 kakao-agent 봇의 한 방을 Blender 작업실로 만들어 달라는 요청이었다. 봇은 매 턴 전에 방 작업 폴더의
+    `CLAUDE.md`·`AGENTS.md`·`.claude/`·`.mcp.json` 을 지우고, claude 를 `--setting-sources user --strict-mcp-config`
+    로 돌린다. 방 폴더에 지침을 둘 길이 없어서 절차를 허브 repo 에 두었다. 봇이 이 repo 를 스스로 찾게 하는
+    연동(kakao-agent `rules.md` 의 주제 목록)은 주인 결정으로 보류했다.
+  - 주인 결정: 헤드리스 CLI 만 쓰고 MCP 는 안 쓴다, 5.2 LTS 로 고정한다, 스크립트가 원본이고 `.blend` 는 산출물이다,
+    설치와 실측은 개발 Mac 이 먼저다. 이번에는 KB 만 썼다. 명령과 API 는 문서와 5.2.2 소스로만 확인했고 실행한 것은 없다.
+  - 허브의 두 Blender 선례가 5.x 에서 깨진다. remote-comfyui `blender_previz.py` 는 5.0 에서 없어진 `scene.node_tree` 를
+    쓰고, openmontage `blender_world` 는 4.5 에 묶여 `BLENDER_EEVEE_NEXT`·`action.fcurves` 를 쓴다. 둘 다
+    `--python-exit-code` 가 없어서 파이썬 예외가 나도 exit 0 으로 성공처럼 보인다.
+  - `ops/repos.md` 의 private 문단에 빠져 있던 `kakao-agent` 도 같이 넣었다. 이번에 고친 문장 안이었다.
+
 ## 2026-09-28
 
 - **kakao-agent 가 주인이 시키면 이 허브의 레포를 고친다.** 주인 결정: 브랜치 + PR, 두뇌는 claude·codex·opencode,
