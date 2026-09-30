@@ -9,6 +9,19 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 # Log
 
+## 2026-09-30
+
+- **Blender 렌더를 DGX ComfyUI 에서 실사로 바꾸는 흐름이 처음 돌았다.** `projects/blender` 가 로우폴리 계곡
+  플라이스루(960x544, 97프레임, EEVEE 36초)를 만들고, `ops/remote-comfyui` 가 설치된 LTX-2.5 로 video-to-video
+  (입력 영상을 인코딩해 시그마 0.95 부터 샘플링)를 해서 63초에 실사로 다시 그린다. 새 모델과 노드는 없다.
+  - 첫 시그마가 강도다. 0.91 까지는 로우폴리가 남고 0.975 부터는 다른 장면이 된다. 한 장면, 한 시드의 실측이다.
+  - 구도는 남지만 카메라는 고정되지 않는다. 카메라를 제약으로 걸려면 remote-comfyui 의 previz depth 컨트롤
+    경로가 여전히 필요하다. 그 경로의 H3 는 라이선스가 대한민국을 제외해 쓰지 않았다.
+  - openmontage `blender_world` 는 upstream 최신(`08e2151`)도 4.5 에 묶여 5.2 에서 깨진다. 4.5 를 깔아도
+    depth 패스와 컨트롤 영상 입력이 없어서 이 흐름에는 쓰지 않았다.
+  - [blender PR #5](https://github.com/BoBeenLee/blender/pull/5),
+    [remote-comfyui PR #69](https://github.com/BoBeenLee/remote-comfyui/pull/69).
+
 ## 2026-09-29
 
 - **`projects/blender` 가 개발 Mac 에서 돈다.** Blender 5.2.2 를 공식 dmg 로 `/Applications` 에 깔았다. SHA256 과 공증은 확인했다.
