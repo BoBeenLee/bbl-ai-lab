@@ -64,6 +64,10 @@ repositories:
     url: https://github.com/BoBeenLee/car.git
     path: projects/car
     branch: main
+  - name: meeting-agent
+    url: https://github.com/BoBeenLee/meeting-agent.git
+    path: projects/meeting-agent
+    branch: main
 ---
 
 # 운영 repo 목록
@@ -97,11 +101,12 @@ bash ops/repo-sync.sh
 ## private repo
 
 `games`, `travel`, `finance`, `music`, `shopping`, `hiking`, `cad`, `voice-agent`, `promo-agent`, `kakao-agent`,
-`blender`, `car`는 private다. 앞의 셋은 계정 로스터, 여행 일정, 재무 프로필 같은 개인 데이터를 이미 담고 있고, `music`은
+`blender`, `car`, `meeting-agent`는 private다. 앞의 셋은 계정 로스터, 여행 일정, 재무 프로필 같은 개인 데이터를 이미 담고 있고, `music`은
 생성곡·가사·취향이, `shopping`은 구매 이력·예산·사이즈가, `hiking`은 GPS 경로·체력 수치·장비 이력이, `cad`는
 집 실측 치수·제작 이력이, `voice-agent`는 통화 녹음·전사·목소리가, `promo-agent`는 커뮤니티에서 수집한 제3자의
 글·닉네임·동네가, `kakao-agent`는 주인·봇 계정 id 와 방 id 가, `blender`는 참고 사진·집 장면·렌더가, `car`는
-차량 식별 정보·차 사진·원본 그림이 쌓이면 개인 데이터가 되기 때문이다.
+차량 식별 정보·차 사진·원본 그림이, `meeting-agent`는 업무 회의 맥락과 측정 결과가 쌓이면 개인 데이터가 되기 때문이다
+(회의 음성과 전사 자체는 커밋하지 않는다).
 나중에 공개에서 비공개로 돌리는 것보다 처음부터 private인 쪽이 싸다.
 private repo는 `gh auth` 세션이나 `GIT_TOKEN=<pat>` 없이는 클론되지 않는다.
 
