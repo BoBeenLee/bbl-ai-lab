@@ -58,6 +58,10 @@ _Avoid_: 크론잡, 자동화 스크립트, automation flow와 동일 취급
 `STATE.md`. 루프가 매 실행 시작에 읽고 끝에 쓰는 유일한 상태 파일. High Priority, Watch List, Recent Noise 세 구획과 마지막 실행 시각을 가진다. 대화 로그를 읽지 않고도 루프가 지금 무엇을 들고 있는지 사람이 확인하는 지점이다.
 _Avoid_: 채팅 히스토리, 실행 로그(`loop-run-log.md`)와 혼용
 
+**Friction**:
+에이전트가 일하다 repo 쪽 문제(낡은 문서나 규칙, 깨지거나 느린 스크립트, 빠진 도구) 때문에 우회한 불편. 그 repo 에 `friction` 라벨 이슈로 남기고(`ops/friction.sh`), daily triage 가 모아 `STATE.md` Watch List 에 올린다. 고칠지는 사람이 정한다. 외부 서비스 탓이라 repo 에서 못 고치는 것은 friction 이 아니다.
+_Avoid_: 버그 리포트와 동일 취급, 기억 파일에만 적기, `gh issue create` 로 직접 남기기
+
 **Loop readiness level**:
 루프에 허용된 자율성 등급. L1은 보고만 하고 아무것도 고치지 않으며, L2는 검증자 승인 하에 작은 수정을 하고, L3은 명시적 gate를 두고 넓게 행동한다. 현재 이 저장소의 daily triage 루프는 L1이다.
 _Avoid_: 신뢰도, 단계

@@ -20,6 +20,7 @@ This directory is the Open Knowledge Format bundle for `bbl-ai-lab`.
 - [Flow adapter files](concepts/flow-adapter-files.md)
 - [Operator workspace repo](concepts/operator-workspace-repo.md)
 - [Autonomous loop](concepts/autonomous-loop.md)
+- [Friction log](concepts/friction-log.md)
 
 # Flows
 
