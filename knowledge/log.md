@@ -9,6 +9,16 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 # Log
 
+## 2026-10-15
+
+- **세션이 우회한 repo 쪽 불편을 그 repo 의 `friction` 이슈로 남기고, daily triage 가 모은다.**
+  계기는 Kent C. Dodds 의 영상(How I to Put My Codebase on Autopilot)이다. 지금까지는 세션이 우회한 불편이 이 Mac 의
+  기억 파일에만 남아 아무도 고치지 않았다.
+  - Kent 의 `file-friction` 스킬과 기준 문서, 이슈 양식, 라벨 둘(`friction`, `friction-skipped`)을 옮겼다.
+  - 그쪽은 Kody 서비스 패키지가 이슈를 만들고 매일 정리한다. 가입과 private repo 권한 위임이 필요해 쓰지 않고,
+    `ops/friction.sh` 와 기존 daily triage 가 나눠 맡는다.
+  - kakao-agent 봇은 자기 repo 하나에만 남기게 묶는다(`FRICTION_ALLOW`). 봇 쪽 변경은 kakao-agent PR 로 따로 한다.
+
 ## 2026-10-11
 
 - **kakao-agent 가 이어 보낸 줄을 한 턴으로 답하고, 경로 이탈은 정확한 위치 둘이 연달아 벗어날 때만 알린다**(kakao-agent#105, 같은 날 배포).

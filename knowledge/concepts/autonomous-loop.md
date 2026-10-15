@@ -33,7 +33,7 @@ must stop.
 
 `loop-intake` sharpens a vague work item into a verifiable goal before anything
 acts on it. `goal-scoper` turns a request into a `GOAL.md` with binary acceptance
-criteria. `loop-triage` produces the findings report. `goal-verifier` and the
+criteria. `loop-triage` produces the findings report, including open `friction` issues that sessions filed while working (see [Friction log](friction-log.md)). `goal-verifier` and the
 `loop-verifier` agent decide whether a goal is done — the implementer never marks
 its own work complete. `loop-budget` checks spend at both ends of a run.
 

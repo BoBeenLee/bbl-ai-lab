@@ -65,6 +65,8 @@ npx @cobusgreyling/loop audit .
 
 루프 skill은 `.claude/skills/`에 실제 디렉터리로 산다 (`loop-constraints`, `loop-budget`, `loop-intake`, `loop-triage`, `goal-scoper`, `goal-verifier`). `.agents/skills/` symlink가 아닌 이유는 `skills-lock.json`이 외부 installer가 설치한 skill만 추적하기 때문이다.
 
+Daily Triage 의 입력 하나는 friction 이슈다. 세션이 일하다 repo 쪽 문제로 우회하면 `file-friction` skill 기준으로 `ops/friction.sh` 를 불러 그 repo 에 `friction` 라벨 이슈를 남기고, 루프가 모든 repo 의 열린 friction 이슈를 모아 `STATE.md` Watch List 에 올린다. 고칠지는 사람이 정한다. 자세한 것은 [knowledge/concepts/friction-log.md](knowledge/concepts/friction-log.md).
+
 ## 계획 관리 (`docs/plans/`)
 
 idea 이슈가 "무엇·왜"라면 `docs/plans/<issue#>-<slug>.md`는 "어떻게·언제·누가"다. plan 작성은 GHA가 아니라 사람이 클로드 데스크탑에서 한다.

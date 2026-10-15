@@ -58,6 +58,7 @@ Autonomous loops are scheduled, not Telegram-triggered, so they take no
 - The implementer never marks its own work done. `goal-verifier` or the `loop-verifier` agent decides.
 - Do not raise a loop above L1 while `loop-run-log.md` has no clean run history.
 - Loop skills live as real directories in `.claude/skills/`, not as `.agents/skills/` symlinks, because `skills-lock.json` only tracks skills the external installer placed.
+- Sessions file repo papercuts they worked around as `friction` issues in the owning repo through `ops/friction.sh`, guided by the `file-friction` skill; `loop-triage` collects them. See `knowledge/concepts/friction-log.md`. Never call `gh issue create` for friction directly, and never file friction into this public hub with personal data.
 
 ## Documentation Rules
 

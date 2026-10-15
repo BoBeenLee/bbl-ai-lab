@@ -1,0 +1,52 @@
+name: Friction
+description: 이 repo 에서 일하다 겪은 불편을 남긴다 (사람용. 에이전트는 ops/friction.sh 를 쓴다)
+title: 'Friction: '
+labels: [friction]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        먼저 열린 friction 이슈를 찾고, 같은 불편이면 거기에 댓글을 단다. 이슈 하나에 불편 하나.
+        이 repo 는 공개라 비밀 값, 홈 경로, 개인 데이터를 넣지 않는다. 원인은 지어내지 않는다.
+  - type: textarea
+    id: happened
+    attributes:
+      label: 무슨 일
+      description: 하던 일과 막힌 것
+    validations:
+      required: true
+  - type: textarea
+    id: wanted
+    attributes:
+      label: 원한 것
+      description: 원래 기대한 길
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 재현 방법
+      description: 다음 사람이나 에이전트가 따라 할 명령, 파일, 조건
+    validations:
+      required: true
+  - type: textarea
+    id: cost
+    attributes:
+      label: 비용
+      description: 잃은 시간, 얼마나 자주, 누가 겪는지, 쓴 우회
+    validations:
+      required: true
+  - type: textarea
+    id: preliminary
+    attributes:
+      label: 이미 본 것
+      description: 짧게. 원인은 지어내지 않는다
+    validations:
+      required: true
+  - type: textarea
+    id: relevant-files
+    attributes:
+      label: 관련 파일
+      description: 한 줄에 하나. 모르면 비운다
+    validations:
+      required: false
