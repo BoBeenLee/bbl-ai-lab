@@ -14,6 +14,7 @@
 - 3D 생성 모델은 Hunyuan3D 를 쓰면 안 된다. 라이선스가 대한민국을 사용 지역에서 뺀다([LICENSE 3, 18행](https://github.com/Tencent-Hunyuan/Hunyuan3D-2.1/blob/main/LICENSE)). 로컬 생성은 TRELLIS(MIT) 를 쓴다.
 - 게임 엔진(Godot, Unity, Unreal)의 MCP 는 모두 에디터를 띄워 둔 상태에서 임의 코드를 실행한다. CoplayDev/unity-mcp 는 텔레메트리가 기본으로 켜져 있다.
 - 무료 에셋은 Kenney(CC0) 를 쓴다. Quaternius 는 CC0 가 아니고 에셋을 재배포하지 못한다.
+- WebGL 은 봇 호스트 헤드리스 브라우저에서 GPU 로 돈다(실측). 카카오톡 인앱 브라우저는 문서상 WebGL2 가 되지만 카카오가 엔진을 공식으로 밝히지 않아 실기기 확인이 남았다. 자세한 것은 맨 끝 "WebGL 실행 환경" 절에 있다.
 
 ## 코딩 에이전트용 3D 도구 자원 조사 (Blender, CAD, 3D 생성, glTF/메시)
 
@@ -406,3 +407,107 @@ Quaternius 사이트에는 Cars Pack, Public Transport Pack, Farm Animal Pack, S
 - https://kenney.nl/support
 - https://quaternius.com/license.html
 - https://skills.sh/api/search?q=threejs (설치 수 집계)
+
+## WebGL 실행 환경 (2026-10-19)
+
+카카오톡 봇이 3D 페이지를 만들어 링크로 보낼 때, 두 곳에서 WebGL 이 돌아야 한다. 하나는 봇이 결과를 확인하려고 찍는 헤드리스 브라우저이고, 다른 하나는 받는 사람이 링크를 여는 카카오톡 인앱 브라우저다.
+
+### 헤드리스 브라우저 측정
+
+길건너 병아리 프로토타입(three@0.186.1, 바닐라 Three.js)을 agent-browser 로 열어 WebGL2 컨텍스트 정보를 읽고 스크린샷을 찍었다.
+
+| 측정 위치 | agent-browser, 브라우저 | WebGL2 렌더러 | 결과 |
+|---|---|---|---|
+| 개발 Mac (Apple M5 Pro) | 0.33.2, HeadlessChrome 149 | ANGLE Metal Renderer: Apple M5 Pro, `MAX_TEXTURE_SIZE` 16384 | 장면과 그림자가 그대로 찍혔다 |
+| 봇 호스트 Mac Hermes (Apple M1 Pro, macOS 26.6.2) | 0.39.1, HeadlessChrome 155 | ANGLE Metal Renderer: Apple M1 Pro, `MAX_TEXTURE_SIZE` 16384 | 데스크톱 크기와 `set device "iPhone 14"`(390px, 가로 넘침 없음) 모두 찍혔다 |
+
+헤드리스에서도 소프트웨어 렌더러가 아니라 GPU(Metal)를 쓴다. 봇 호스트 측정은 ssh 셸에서 봇과 같은 `AGENT_BROWSER_SOCKET_DIR` 에 별도 세션 이름으로 돌렸다. 봇 두뇌의 샌드박스(claude Bash 샌드박스, codex 와 opencode 의 agent.sb) 안에서도 GPU 에 닿는지는 재지 않았다.
+
+### 카카오톡 인앱 브라우저 조사
+
+조사일: 2026-10-19. 1차 출처만 적었다. 출처로 확인 못 한 것은 미확인으로 표시했다.
+
+#### 결론
+
+- 문서상으로는 돈다. r186 WebGLRenderer 는 WebGL2 만 쓰고, WebGL2 는 Android WebView 58+ 와 iOS 15+ WebKit 에 들어 있다. iOS 에서는 앱이 WebKit 을 쓰도록 App Store 규정이 강제하므로 카카오톡 iOS 인앱 브라우저도 WebKit 이다(EU, 일본 대체 엔진 예외).
+- 카카오가 엔진을 공식 문서로 밝힌 곳은 찾지 못했다. Android 가 System WebView(Custom Tabs 아님)라는 근거는 devtalk 담당자의 간접 발언 하나뿐이다(미확인에 가까움). 실기기 UA 의 `; wv)` 토큰으로 확인해야 한다.
+- 카카오가 확인해 준 것은 하나다. UA 에 `KAKAOTALK` 가 들어 있어서 판별할 수 있다는 것. `kakaotalk://web/openExternal?url=` 은 개발자들이 쓰는 스킴이지만 카카오 공식 문서나 담당자 답변으로는 확인되지 않았다(미확인).
+- 실질 위험: (1) WebGL2 컨텍스트 생성 실패나 컨텍스트 손실(백그라운드 전환, 메모리) 대비, (2) iPhone 에서 Element Fullscreen API 없음, (3) 인앱 브라우저의 제스처(좌우 스와이프 뒤로가기 등) 설정은 앱이 정하는데 카카오톡 설정값은 미확인.
+
+#### 1. 카카오톡 인앱 브라우저 엔진, UA, 외부 브라우저 스킴
+
+| 항목 | 내용 | 확인 수준 | 출처 |
+|---|---|---|---|
+| UA 판별 | 카카오 담당자(woody.ho, 2026-03-25): UA 에 `KAKAOTALK` 포함 여부로 인앱 브라우저를 식별한다. 예시 코드 `/kakaotalk/i.test(navigator.userAgent)` (2026-04-10) | 카카오 포럼 담당자 답변. developers.kakao.com 문서는 못 찾음 | https://devtalk.kakao.com/t/user-agent/148932 |
+| UA 전체 형식 | 버전 토큰 형식 등 전체 문자열을 밝힌 카카오 자료 없음 | 미확인 | 위 스레드 |
+| iOS 엔진 | App Store 심사 지침 2.5.6: 웹을 보는 앱은 WebKit 프레임워크와 WebKit JavaScript 를 써야 한다(EU, 일본 대체 엔진 entitlement 예외). WKWebView 인지 SFSafariViewController 인지는 카카오가 밝힌 자료 없음 | WebKit 은 확인, 세부 API 는 미확인 | https://developer.apple.com/app-store/review/guidelines/ |
+| Android 엔진 | 카카오 담당자 tim.l (2025-10-14): blob, dataurl 다운로드에 대해 "android 웹뷰에서 작동하지 않습니다. 다른 인앱브라우저 마찬가지입니다." 카카오톡 인앱 브라우저가 Android WebView 라는 간접 근거. Custom Tabs 여부를 직접 밝힌 문서 없음 | 간접. 미확인에 가까움 | https://devtalk.kakao.com/t/topic/146696 |
+| 외부 브라우저 스킴 | `kakaotalk://web/openExternal?url=...` 는 개발자 질문글과 개인 gist 에만 나온다. 담당자 답변(tambot, 2026-07-23)은 스킴을 언급하지 않고 카카오톡 고객센터로 안내 | 미확인 | https://devtalk.kakao.com/t/topic/150815 , https://devtalk.kakao.com/t/branch/151358 |
+| 사용자 메뉴로 외부 열기 | Android 더보기 메뉴의 "다른 브라우저로 열기", iPhone 공유 버튼 | 블로그성 자료만 있음, 카카오 공식 도움말 미확인 | (공식 출처 없음) |
+
+#### 2. WebView 의 WebGL / WebGL2
+
+| 항목 | 내용 | 출처 |
+|---|---|---|
+| Android WebView WebGL2 | chromestatus "WebGL 2": desktop 56, Android 58, WebView 58 기본 활성 | https://chromestatus.com/feature/6694359164518400 (API: https://chromestatus.com/api/v0/features/6694359164518400) |
+| 하드웨어 가속 필수 | Chromium 문서: software draw 는 `<webgl>` 등 기능이 빠져 있다. 하드웨어 가속은 Chromium WebView 지원 Android 전 버전에서 기본 켜짐. `android:hardwareAccelerated=false`, `setLayerType(LAYER_TYPE_SOFTWARE)` 를 쓰지 말 것 | https://chromium.googlesource.com/chromium/src/+/HEAD/android_webview/docs/software_draw_deprecated.md |
+| 카카오톡 앱의 가속 설정 | 앱 쪽 설정이라 외부에서 확인 불가 | 미확인 |
+| GPU 블록리스트 | 특정 GPU/드라이버에서 WebGL 이 꺼질 수 있다는 점(Chromium software_rendering_list)은 이번 조사에서 원문 확인 안 함 | 미확인 |
+| iOS WebGL2 | WebKit Safari 15 기능 글: WebGL2 지원, WebGL 을 Metal 위로 이전. iOS 15, iPadOS 15 포함. 글은 WKWebView 를 따로 언급하지 않는다. 기본 활성 패치는 WebKit 버그 216464 | https://webkit.org/blog/11989/new-webkit-features-in-safari-15/ , https://bugs.webkit.org/show_bug.cgi?id=216464 |
+| WKWebView 와 Safari 동일 여부 | Apple/WebKit 이 "WKWebView 에서도 WebGL2 동일"이라고 쓴 문서는 못 찾음. 같은 WebKit 이므로 같을 것으로 추정 | 미확인 |
+| iOS 컨텍스트 손실 | WebKit 버그 261313 "[ANGLE] Don't lose Metal-backed contexts for non-fatal errors" FIXED (2024-08). 백그라운드 후 손실 보고 261331. 버퍼 업로드 중 손실(iOS 18) 289601 은 중복 처리. iOS 18 `flat` 셰이더 손실 286297 은 18.5 에서 수정 보고 | https://bugs.webkit.org/show_bug.cgi?id=261313 , https://bugs.webkit.org/show_bug.cgi?id=261331 , https://bugs.webkit.org/show_bug.cgi?id=289601 , https://bugs.webkit.org/show_bug.cgi?id=286297 |
+| 메모리 한도 | WebView/WKWebView 의 WebGL 메모리 상한 수치를 밝힌 1차 문서 없음 | 미확인 |
+
+#### 3. Three.js r186 요구사항
+
+| 항목 | 내용 | 출처 |
+|---|---|---|
+| r186 존재 | GitHub 릴리스 r186, 2026-09-24 게시 | `gh release view r186 -R mrdoob/three.js`, https://github.com/mrdoob/three.js/releases/tag/r186 |
+| WebGL1 지원 | 없음. r186 `src/renderers/WebGLRenderer.js` 주석 "WebGL 1 is not supported since `r163`." WebGL1 컨텍스트를 넘기면 `THREE.WebGLRenderer: WebGL 1 is not supported since r163.` 예외 | https://github.com/mrdoob/three.js/blob/r186/src/renderers/WebGLRenderer.js |
+| 컨텍스트 생성 | `getContext('webgl2', attrs)` 만 시도. 실패하면 "Error creating WebGL context." 예외. 폴백 없음 | 같은 파일 |
+| 컨텍스트 손실 처리 | `webglcontextlost` 에서 `preventDefault()` 하고 `_isContextLost = true`, `webglcontextrestored` 에서 복원 | 같은 파일 |
+| 마이그레이션 가이드 | r162 → r163 절: "`WebGLRenderer` no longer supports WebGL 1." r185 → r186 절에는 렌더러 요구사항 변경 없음(Object3D.dispose, Source→TextureSource 등) | https://github.com/mrdoob/three.js/wiki/Migration-Guide |
+
+#### 4. 터치, 포인터 입력
+
+| 항목 | 내용 | 출처 |
+|---|---|---|
+| Pointer Events, Android WebView | chromestatus "Pointer Events": desktop/Android/WebView 55 | https://chromestatus.com/api/v0/features/4504699138998272 |
+| touch-action, Android | chromestatus "CSS touch-action" Android 36, pan-* 55, pinch-zoom 56 (WebView 55/56) | https://chromestatus.com/api/v0/features?q=touch-action |
+| Pointer Events, iOS | WebKit Safari 13 기능 글이 Pointer Events 추가를 명시 | https://webkit.org/blog/9674/new-webkit-features-in-safari-13/ |
+| touch-action: none, iOS | 처음 지원된 iOS 버전을 밝힌 WebKit 공지는 못 찾음. 관련 버그만 있음(198275, 213846) | 미확인 |
+| WKWebView 스와이프 뒤로가기 | `allowsBackForwardNavigationGestures`: 가로 스와이프로 앞/뒤 이동. 기본값 false. 켤지 여부는 앱(카카오톡)이 정한다. 카카오톡 설정값은 미확인 | https://developer.apple.com/documentation/webkit/wkwebview/allowsbackforwardnavigationgestures |
+| 당겨서 새로고침 등 카카오톡 고유 제스처 | 카카오 자료 없음 | 미확인 |
+
+#### 5. 전체화면, 화면 방향
+
+| 항목 | 내용 | 출처 |
+|---|---|---|
+| iOS Safari Fullscreen API | Safari 16.4: 비접두 Fullscreen API 를 macOS, iPadOS 에서 지원. iPhone 은 빠짐. WebKit 버그 206854 "Add Fullscreen API to iOS" 는 2026-10 현재 NEW | https://webkit.org/blog/13966/webkit-features-in-safari-16-4/ , https://bugs.webkit.org/show_bug.cgi?id=206854 |
+| WKWebView 전체화면 | `WKPreferences.isElementFullscreenEnabled` (iOS/iPadOS 15.4+), 기본값 false. 켜야 페이지의 전체화면 요청이 동작한다. 카카오톡 설정값은 미확인 | https://developer.apple.com/documentation/webkit/wkpreferences/iselementfullscreenenabled |
+| Android WebView 전체화면 | `WebChromeClient.onShowCustomView`: 페이지가 전체화면에 들어가면 호스트 앱이 넘겨받은 View 를 FLAG_FULLSCREEN 창에 붙여야 실제 전체화면이 된다. 즉 앱 구현에 달림. 카카오톡 구현 여부 미확인 | https://developer.android.com/reference/android/webkit/WebChromeClient |
+| Screen Orientation (iOS) | Safari 16.4: `type`, `angle`, `onchange` 지원. `lock()`/`unlock()` 은 실험 기능 | https://webkit.org/blog/13966/webkit-features-in-safari-16-4/ |
+| Screen Orientation lock (Android WebView) | 이번 조사에서 1차 출처 확인 안 함 | 미확인 |
+| 권한 요청 (참고) | Android `onPermissionRequest` 를 앱이 구현하지 않으면 권한은 거부된다(카메라, 마이크 등. 자이로 등 센서는 별개) | https://developer.android.com/reference/android/webkit/WebChromeClient |
+
+#### 실기기에서 재야 할 것
+
+1. 카카오톡 Android, iOS 인앱 브라우저의 실제 UA 문자열(`; wv)` 토큰, `KAKAOTALK` 뒤 버전 형식). 테스트 서버 로그로 받는다.
+2. Android 가 System WebView 인지 Custom Tabs 인지(UA 의 `wv`, `navigator.userAgentData`, 주소창/메뉴 모양).
+3. `canvas.getContext('webgl2')` 성공 여부와 `WEBGL_debug_renderer_info` 로 본 GPU 이름, `MAX_TEXTURE_SIZE`. 저가 Android 기기 포함.
+4. 인앱 브라우저를 백그라운드로 보냈다가 복귀, 화면 잠금 후 복귀 시 `webglcontextlost`/`webglcontextrestored` 발생과 복구 여부.
+5. 무거운 씬(텍스처 수, 해상도)에서 크래시나 컨텍스트 손실이 나는 지점. iOS 는 WKWebView 콘텐츠 프로세스 종료(흰 화면)도 본다.
+6. `touch-action: none` 캔버스에서 한 손가락 드래그, 핀치가 페이지 스크롤/확대 없이 Pointer Events 로 들어오는지.
+7. iOS 화면 왼쪽 가장자리 스와이프가 뒤로가기로 먹히는지(카카오톡이 `allowsBackForwardNavigationGestures` 를 켰는지). Android 시스템 뒤로 제스처와 충돌 여부.
+8. 위아래 드래그 시 인앱 브라우저 툴바 숨김/표시로 뷰포트 높이가 바뀌는지, 당겨서 새로고침이 있는지.
+9. `requestFullscreen()` 동작(iPhone 은 문서상 불가, iPad 와 Android 는 카카오톡 구현에 달림), `screen.orientation.lock()` 동작.
+10. `kakaotalk://web/openExternal?url=` 가 현재 카카오톡 버전에서 외부 브라우저를 여는지(Android, iOS 각각).
+
+### 봇 3D 페이지에 넣을 것
+
+위 조사에서 나온 대비책이다. 길건너 병아리 프로토타입에는 아직 없다.
+
+- WebGL2 컨텍스트 생성이 실패하면 빈 화면 대신 "이 브라우저에서는 3D 를 열 수 없습니다" 안내와 외부 브라우저로 여는 방법을 보여 준다.
+- `webglcontextlost` 와 `webglcontextrestored` 를 받아 게임을 멈추고, 복원되면 장면을 다시 만든다.
+- 전체화면 버튼은 iPhone 에서 동작하지 않으므로 필수 기능으로 두지 않는다.
+- 화면 가장자리에서 시작하는 스와이프는 인앱 브라우저의 뒤로가기와 겹칠 수 있으니, 입력 판정은 화면 안쪽에서 시작한 스와이프와 탭을 기준으로 한다.
