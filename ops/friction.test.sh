@@ -39,6 +39,9 @@ out="$(item | run)"
 grep -q "^commented: .*issues/7" <<< "$out"                       || fail "같은 제목인데 댓글로 붙이지 않았다: $out"
 grep -q "issue create" "$GH_LOG"                                  && fail "같은 제목인데 새 이슈를 만들었다"
 
+out="$(item | jq '.title = "Friction: yt-dlp 봇 확인"' | run)"
+grep -q "^commented: .*issues/7" <<< "$out"                       || fail "접두어를 붙여 넣은 제목이 같은 이슈를 못 찾았다: $out"
+
 out="$(item | jq '.cost = " "' | run)"
 grep -q "^skipped: cost" <<< "$out"                               || fail "빈 항목을 건너뛰지 않았다: $out"
 [ -s "$GH_LOG" ]                                                  && fail "건너뛰는데 gh 를 불렀다"
