@@ -23,7 +23,9 @@ for k in title happened wanted reproduce cost preliminary; do
   [ -n "$v" ] || { echo "skipped: $k 가 비었다"; exit 0; }
 done
 
-title="Friction: $(jq -r '.title' <<< "$item")"
+# 열린 이슈 목록의 제목을 그대로 넣어도 접두어가 두 번 붙지 않게 한다. 두 번 붙으면 중복 검사를 빠져나간다.
+title="$(jq -r '.title' <<< "$item")"
+title="Friction: ${title#Friction: }"
 body="$(jq -r '
   def files: (.files // "") | (if type == "array" then join("\n") else tostring end) | if . == "" then "모름" else . end;
   "### 무슨 일\n\(.happened)\n\n### 원한 것\n\(.wanted)\n\n### 재현 방법\n\(.reproduce)\n\n### 비용\n\(.cost)\n\n### 이미 본 것\n\(.preliminary)\n\n### 관련 파일\n\(files)"
