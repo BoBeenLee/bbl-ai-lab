@@ -1,8 +1,8 @@
 # bbl-ai-lab Agent Guide
 
-This repository is an automation flow hub. Telegram commands enter through the Cloudflare Worker, the Worker dispatches GitHub Actions, and the Actions run scripts/prompts that create issues, reports, or other outputs.
+This repository is a hub. It holds the manifest (`ops/repos.md`) that installs operator, project, and upstream tool repos, the shared agent skills, the friction tooling, and an OKF knowledge bundle. Real work happens in the repos it installs.
 
-Read this guide before changing repository-level automation, Worker routing, docs, or flow files.
+Read this guide before changing the manifest, shared skills, friction tooling, or docs.
 
 ## Source Context
 
@@ -10,86 +10,38 @@ Use these files as the source of truth:
 
 - `CONTEXT.md` for project language.
 - `README.md` for the public operating model and setup.
-- `docs/plans/README.md` for plan document workflow.
-- `worker/src/flows.ts` for automation flow registration.
-- `LOOP.md` for which autonomous loops run, and `docs/safety.md` for their denylist.
+- `ops/repos.md` for which repos the hub installs.
 
-## Flow Registry Rules
+## Repo Layout
 
-- Start every new automation flow in `worker/src/flows.ts`.
-- Treat `worker/src/flows.ts` as the single manifest for Telegram commands, subcommands, `repository_dispatch` event types, and adapter file paths.
-- Do not add a workflow, script, prompt, or flow doc without also adding or updating the manifest entry.
-- Keep new `eventType` values equal to `<flow>-<action>` unless preserving an explicit legacy event. The only current legacy event allowed by the checker is `idea-submitted`.
-- For subcommand flows, use the shape `/command subcommand body`; put action-specific workflow/script/prompt/docs paths inside `subcommands`.
-- After flow changes, run:
-
-```bash
-cd worker
-npm run typecheck
-```
-
-This runs TypeScript checking and verifies manifest drift against workflow `repository_dispatch.types` plus workflow/script/prompt/docs file existence.
-
-## Current Flow Layout
-
-- Worker runtime: `worker/src/index.ts`
-- Flow manifest and routing helpers: `worker/src/flows.ts`
-- Flow consistency checker: `worker/scripts/check-flows.mjs`
-- GitHub Actions workflows: `.github/workflows/<flow>-<action>.yml`
-- Runtime scripts: `scripts/<flow>-<action>.sh`
-- Gemini prompts: `scripts/prompts/<flow>-<action>.md`
-- Flow docs: `docs/<flow>-<action>.md`
-- Skill context attached by Actions: `skills/*.SKILL.md`
-- Operator tooling that is not a Telegram/GitHub Actions flow belongs in the relevant operator repo, such as `hermes-workspace/` or `ops/remote-comfyui/`, not in this repo's top-level `scripts/`.
+- Operator tooling belongs in the relevant operator repo, such as `hermes-workspace/` or `ops/remote-comfyui/`, not in this hub.
 - Operator repos are cloned, not submodules. `ops/repos.md` is the single manifest for their URL, branch, and install path; `ops/repo-sync.sh` reads it. Adding or moving an operator repo means editing the manifest and `.gitignore` together.
-- The same manifest also covers project repos, which live under `projects/` rather than `ops/`. `path` is resolved from the hub root, so it need not start with `ops/`. An operator repo owns operations for a remote host; a project repo owns a body of work that is not a Telegram/Actions flow — `projects/games` owns game-related agent skills, `projects/travel` owns trip planning, `projects/finance` owns a personal-finance knowledge base, `projects/music` owns AI music production knowledge, `projects/shopping` owns real-purchase decision workflows, `projects/hiking` owns hiking knowledge and per-outing records, `projects/cad` owns FreeCAD knowledge and per-design records (3D-printable parts, Python-generated models, furniture and interior layouts), `projects/voice-agent` owns voice-agent knowledge and per-agent records, gated on staying free, `projects/promo-agent` owns promotion-channel knowledge and per-campaign records, gated on measuring a platform's surface before automating it, `projects/kakao-agent` owns a KakaoTalk bot on the Mac that runs a selectable local agent CLI (Claude Code, Codex, opencode) per turn through Iris on an Android emulator, on its own KakaoTalk account next to the DGX bot, `projects/blender` owns Blender knowledge and per-work records (headless scenes, renders, animation, GLB and STL exports), leaving dimension-driven parts to `projects/cad`, `projects/car` owns car knowledge and per-work records (on-screen custom wrap images first), leaving 3D scenes and renders to `projects/blender`, `projects/reverse-engineering` owns reverse-engineering notes on installed apps (REA + Ghidra; per-target findings with decompiled excerpts, never the binaries themselves), and `projects/meeting-agent` owns a meeting companion agent that listens locally on the Mac (no bot in the call), watches the screen I am looking at, and advises only me, with meeting audio, transcripts, and screen captures kept out of git; only its skill edition (an agent skill that runs the same way in Claude Desktop, Codex, or opencode, plus a menu bar app) is installed, on any Mac by the repo's `scripts/setup-mac.sh` (Codex and opencode serve as its brain only after I explicitly allow them in that repo), while the standalone app edition is on hold. All install the same way and none is tracked by the hub. Project repos register themselves: `repo-sync.sh` scans `projects/*/`, and any clone missing from the manifest is appended from its own `origin` URL and default branch, so neither `ops/repos.md` nor `.gitignore` (a `/projects/*/` glob) is edited by hand. A directory with no `origin` is warned about and skipped. Do not hand-edit `ops/repos.md` for a `projects/` entry — add the remote and run the sync.
+- The same manifest also covers project repos, which live under `projects/` rather than `ops/`. `path` is resolved from the hub root, so it need not start with `ops/`. An operator repo owns operations for a remote host; a project repo owns one category's body of work — `projects/games` owns game-related agent skills, `projects/travel` owns trip planning, `projects/finance` owns a personal-finance knowledge base, `projects/music` owns AI music production knowledge, `projects/shopping` owns real-purchase decision workflows, `projects/hiking` owns hiking knowledge and per-outing records, `projects/cad` owns FreeCAD knowledge and per-design records (3D-printable parts, Python-generated models, furniture and interior layouts), `projects/voice-agent` owns voice-agent knowledge and per-agent records, gated on staying free, `projects/promo-agent` owns promotion-channel knowledge and per-campaign records, gated on measuring a platform's surface before automating it, `projects/kakao-agent` owns a KakaoTalk bot on the Mac that runs a selectable local agent CLI (Claude Code, Codex, opencode) per turn through Iris on an Android emulator, on its own KakaoTalk account next to the DGX bot, `projects/blender` owns Blender knowledge and per-work records (headless scenes, renders, animation, GLB and STL exports), leaving dimension-driven parts to `projects/cad`, `projects/car` owns car knowledge and per-work records (on-screen custom wrap images first), leaving 3D scenes and renders to `projects/blender`, `projects/reverse-engineering` owns reverse-engineering notes on installed apps (REA + Ghidra; per-target findings with decompiled excerpts, never the binaries themselves), and `projects/meeting-agent` owns a meeting companion agent that listens locally on the Mac (no bot in the call), watches the screen I am looking at, and advises only me, with meeting audio, transcripts, and screen captures kept out of git; only its skill edition (an agent skill that runs the same way in Claude Desktop, Codex, or opencode, plus a menu bar app) is installed, on any Mac by the repo's `scripts/setup-mac.sh` (Codex and opencode serve as its brain only after I explicitly allow them in that repo), while the standalone app edition is on hold. All install the same way and none is tracked by the hub. Project repos register themselves: `repo-sync.sh` scans `projects/*/`, and any clone missing from the manifest is appended from its own `origin` URL and default branch, so neither `ops/repos.md` nor `.gitignore` (a `/projects/*/` glob) is edited by hand. A directory with no `origin` is warned about and skipped. Do not hand-edit `ops/repos.md` for a `projects/` entry — add the remote and run the sync.
 - A third kind of manifest entry is an upstream tool repo, owned by its upstream author rather than by me. `ops/openmontage` is the only one: an AGPL-3.0 video production pipeline that calls `ops/remote-comfyui`'s DGX ComfyUI as one provider inside its `assets` stage. Its `.gitignore` line is added by hand like an operator repo's, `repo-sync.sh` clones but does not install (`make setup` inside the repo does), and local edits have nowhere to push until it is forked. See `knowledge/concepts/operator-workspace-repo.md`.
 - A manifest repo may be private. `games`, `travel`, `finance`, `music`, `shopping`, `hiking`, `cad`, `voice-agent`, `promo-agent`, `kakao-agent`, `blender`, `car`, `meeting-agent`, and `reverse-engineering` are. The first three hold personal data outright; the rest become personal data as they accumulate — generated songs and taste for `music`, purchase history and sizes for `shopping`, GPS tracks and fitness numbers for `hiking`, home measurements and fabrication history for `cad`, call recordings and transcripts for `voice-agent`, third-party posts, handles and neighbourhoods scraped from communities for `promo-agent`, the owner's and bot's account ids and room ids for `kakao-agent`, reference photos, home scenes and renders for `blender`, vehicle identifiers, car photos and source artwork for `car`, and work-meeting context and measurement results for `meeting-agent`, whose meeting audio, transcripts, and screen captures are never committed at all. `reverse-engineering` is private because it quotes decompiled code from commercial apps. Private entries need a `gh auth` session or `GIT_TOKEN=<pat>` to clone.
 - The `kakao-agent` bot reads this hub too. Its host keeps a clone at `~/bbl-ai-lab` with every manifest repo, pulled by hand, except that a PR the bot merges itself is pulled into that clone in the same turn (its `hub_pull` tool), and the bot's rules send any question about my projects there: it picks a repo from `ops/repos.md` and the descriptions above, then follows that repo's `CLAUDE.md` or `README.md`. A project's entry doc is therefore also what the bot answers from, so keep it pointing at the repo's skills and data. When I ask it to in a mention, it also edits: one git worktree per change on a `kakao/<name>` branch, pushed and opened as a PR, never a push to `main`. It merges that PR itself only when my mention says to, and only with `gh pr merge <url> --merge` on an open `kakao/*` branch; otherwise I merge. `hermes-workspace`, `projects/kakao-agent`, and `ops/openmontage` stay read-only to it. Expect `kakao/*` PRs whose commits end with `Assisted-by: kakao-agent (<brain>)`, and follow the repo's own rules when reviewing them. The DGX `[jarvis]` bot (hermes-workspace `plugins/kakao`) reads the hub the same way from its own `~/bbl-ai-lab` once that clone is installed there, and only in the owner's own turns.
-
-## Loop Rules
-
-Autonomous loops are scheduled, not Telegram-triggered, so they take no
-`worker/src/flows.ts` entry. See `knowledge/concepts/autonomous-loop.md`.
-
-- Treat `LOOP.md` as the single manifest for which loops run, at what cadence, and at what readiness level.
-- `docs/safety.md` is the binding denylist. A loop that would touch a listed path escalates instead of editing.
-- A loop reads `STATE.md` at the start of every run and writes outcomes there at the end. Escalation means a `needs-human` item under High Priority, not a new issue.
-- The implementer never marks its own work done. `goal-verifier` or the `loop-verifier` agent decides.
-- Do not raise a loop above L1 while `loop-run-log.md` has no clean run history.
-- Loop skills live as real directories in `.claude/skills/`, not as `.agents/skills/` symlinks, because `skills-lock.json` only tracks skills the external installer placed.
-- Sessions file repo papercuts they worked around as `friction` issues in the owning repo through `ops/friction.sh`, guided by the `file-friction` skill; `loop-triage` collects them. See `knowledge/concepts/friction-log.md`. Never call `gh issue create` for friction directly, and never file friction into this public hub with personal data.
+- Shared agent skills live in `.agents/skills/` (installer-owned, pinned in `skills-lock.json`) and are exposed to Claude Code through `.claude/skills/` symlinks. `file-friction` is the only skill this repo owns directly.
+- Sessions file repo papercuts they worked around as `friction` issues in the owning repo through `ops/friction.sh`, guided by the `file-friction` skill. See `knowledge/concepts/friction-log.md`. Never call `gh issue create` for friction directly, and never file friction into this public hub with personal data.
 
 ## Documentation Rules
 
-- Update `README.md` when the repository operating model, setup flow, or user-facing flow list changes.
+- Update `README.md` when the hub's operating model, setup flow, or repo list changes.
 - Update `CONTEXT.md` when a new project term becomes load-bearing for future plans or code reviews.
-- Update `docs/<flow>-<action>.md` when a specific flow's trigger, environment, output, or verification changes.
-- Update `knowledge/flows/<flow>-<action>.md` when an automation flow is added or its relationships change.
-- Update `knowledge/concepts/` when a load-bearing project concept is added or materially redefined.
+- Update `knowledge/concepts/` when a load-bearing project concept is added or materially redefined, and add an entry to `knowledge/log.md`.
 - Keep every `knowledge/**/*.md` file in Open Knowledge Format style: YAML frontmatter at the top with `type` required; prefer `title`, `description`, `resource`, `tags`, and `timestamp` when available.
-- Update `docs/plans/README.md` only when the plan document workflow changes.
 
 ## Safety Rules
 
-- Never commit secrets, OAuth credentials, Telegram bot tokens, GitHub tokens, SSH keys, `.env` files, or remote operator workspace secrets.
-- Keep `worker/wrangler.toml` free of secrets; use `wrangler secret put` for sensitive values.
+- Never commit secrets, OAuth credentials, bot tokens, GitHub tokens, SSH keys, `.env` files, or remote operator workspace secrets.
 - Do not remove generated or local worktree directories unless the user explicitly asks.
 - Existing untracked files may belong to the user. Stage only intentional files when asked to commit.
 
 ## Verification Before Finishing
 
-For Worker or flow registry changes:
-
-```bash
-cd worker
-npm run typecheck
-```
-
 For shell script changes:
 
 ```bash
-bash -n scripts/<changed-script>.sh
+bash -n ops/<changed-script>.sh
 ```
 
 For operator repo manifest changes:
@@ -101,13 +53,13 @@ bash ops/repo-sync.test.sh
 
 `--list` registers any unregistered `projects/` clone, then parses `ops/repos.md` and fails if an entry is missing a name, url, path, or branch. `repo-sync.test.sh` exercises that registration in a temp directory and touches no real repo.
 
-For docs-only changes, inspect the diff and make sure links/paths still match the manifest.
-
-For loop scaffolding changes:
+For friction tooling changes:
 
 ```bash
-npx @cobusgreyling/loop audit .
+bash ops/friction.test.sh
 ```
+
+For docs-only changes, inspect the diff and make sure links/paths still match the manifest.
 
 For OKF knowledge bundle changes:
 

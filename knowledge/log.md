@@ -9,6 +9,17 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 # Log
 
+## 2026-10-24
+
+- **허브를 manifest, 공용 스킬, friction 도구, 지식 번들만 남기고 정리한다.**
+  security-audit-skill 점검에서 나온 단서 1~5번이 모두 아래 항목에 있었고, 쓰는 흔적이 없어 고치지 않고 지웠다.
+  - Telegram `/idea` 흐름 전체(Worker, 워크플로 3개, scripts, product-brainstorming, docs/plans, flow 지식 문서).
+    elaborate 마지막 성공 06-10, 마지막 시도 07-01 실패. grill 은 실제로 돈 적이 없다.
+  - loop 뼈대(LOOP.md, STATE.md, loop-*.md, loop-*/goal-* 스킬, loop-verifier, docs/safety.md). 08-22 설치 뒤 한 번도 안 돌았다.
+  - 3개월간 호출 0회인 벤더 스킬 15개. `baoyu-youtube-transcript`, `unlazy`, `dgx-comfyui-ops` 는 남겼다.
+  - `ops/openhuman-altalt-proxy` 를 manifest 에서 뺐다(마지막 커밋 07-05).
+  - 배포된 Cloudflare Worker, Telegram 웹훅, GitHub 시크릿은 repo 밖이라 따로 내린다.
+
 ## 2026-10-15
 
 - **세션이 우회한 repo 쪽 불편을 그 repo 의 `friction` 이슈로 남기고, daily triage 가 모은다.**
