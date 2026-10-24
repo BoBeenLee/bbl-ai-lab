@@ -64,7 +64,7 @@
 - `/codex:rescue` 는 기본이 쓰기 권한이다(조사 에이전트가 [agents/codex-rescue.md](https://github.com/openai/codex-plugin-cc/blob/main/plugins/codex/agents/codex-rescue.md) 에서 확인). 리뷰만 쓴다.
 
 가진 것의 빈틈:
-- 허브의 [loop-verifier](../../.claude/agents/loop-verifier.md) 는 `model: inherit` 이고 `tools` 줄이 없어 모든 도구가 열려 있다. 같은 계열 모델이 판정하고, 쓰기 권한이 있고, 구현한 쪽이 불러야만 돈다.
+- 허브의 loop-verifier(2026-10 정리 때 삭제) 는 `model: inherit` 이고 `tools` 줄이 없어 모든 도구가 열려 있다. 같은 계열 모델이 판정하고, 쓰기 권한이 있고, 구현한 쪽이 불러야만 돈다.
 - 바깥 도구들은 세 점이 다르다: 다른 계열 모델이 판정하고, Stop 훅이 하네스 차원에서 강제하고, 읽기 전용을 프롬프트가 아니라 CLI 샌드박스가 막는다.
 - GATES.md 의 `CHECK:` 를 Stop command 훅으로 결정적으로 돌려 막는 도구는 찾지 못했다.
 

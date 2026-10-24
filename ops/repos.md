@@ -8,10 +8,6 @@ repositories:
     url: https://github.com/BoBeenLee/remote-comfyui.git
     path: ops/remote-comfyui
     branch: main
-  - name: openhuman-altalt-proxy
-    url: https://github.com/BoBeenLee/openhuman-altalt-proxy.git
-    path: ops/openhuman-altalt-proxy
-    branch: main
   - name: openmontage
     url: https://github.com/calesthio/OpenMontage.git
     path: ops/openmontage

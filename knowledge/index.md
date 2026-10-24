@@ -1,9 +1,9 @@
 ---
 type: Knowledge Bundle Index
 title: bbl-ai-lab Knowledge Bundle
-description: OKF bundle for the automation flow hub, optimized for agent traversal and cross-document linking.
+description: OKF bundle for the bbl-ai-lab hub, optimized for agent traversal and cross-document linking.
 resource: ../README.md
-tags: [okf, automation-flow-hub, agents]
+tags: [okf, hub, agents]
 timestamp: 2026-06-27T00:00:00+09:00
 ---
 
@@ -15,27 +15,12 @@ This directory is the Open Knowledge Format bundle for `bbl-ai-lab`.
 
 # Core Concepts
 
-- [Automation flow](concepts/automation-flow.md)
-- [Flow registry](concepts/flow-registry.md)
-- [Flow adapter files](concepts/flow-adapter-files.md)
 - [Operator workspace repo](concepts/operator-workspace-repo.md)
-- [Autonomous loop](concepts/autonomous-loop.md)
 - [Friction log](concepts/friction-log.md)
-
-# Flows
-
-- [idea-elaborate](flows/idea-elaborate.md)
-
-# Playbooks
-
-- [Add a new flow](playbooks/add-new-flow.md)
 
 # Source Documents
 
 - [Repository README](../README.md)
 - [Project context](../CONTEXT.md)
 - [Agent guide](../AGENTS.md)
-- [Plan workflow guide](../docs/plans/README.md)
-- [Flow manifest](../worker/src/flows.ts)
-- [Loop manifest](../LOOP.md)
-- [Loop safety denylist](../docs/safety.md)
+- [Repo manifest](../ops/repos.md)

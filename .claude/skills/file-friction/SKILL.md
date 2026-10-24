@@ -10,8 +10,7 @@ description: >
 
 Kent C. Dodds 의 [file-friction](https://github.com/kentcdodds/kody/blob/main/.agents/skills/file-friction/SKILL.md)
 과 [friction log 기준](https://github.com/kentcdodds/kody/blob/main/docs/contributing/friction-log.md) 을 옮겼다.
-목적은 다음 에이전트가 같은 데서 막히지 않게, 우회한 불편을 고칠 일로 바꾸는 것이다. 남긴 이슈는 daily triage 가
-모아 `STATE.md` 에 올리고, 고칠지는 사람이 정한다.
+목적은 다음 에이전트가 같은 데서 막히지 않게, 우회한 불편을 고칠 일로 바꾸는 것이다. 고칠지는 사람이 정한다.
 
 ## 남길 것과 건너뛸 것
 

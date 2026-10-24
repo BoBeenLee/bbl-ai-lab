@@ -40,7 +40,6 @@ __pycache__/
 ### 운영 repo (ops/repo-sync.sh 로 클론, 이 repo가 추적하지 않음)
 /hermes-workspace/
 /ops/remote-comfyui/
-/ops/openhuman-altalt-proxy/
 /ops/openmontage/
 
 ### projects 하위 별도 repo (hub 가 추적하지 않음)
