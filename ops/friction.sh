@@ -4,12 +4,18 @@
 # 사용: ops/friction.sh <repo 경로> < item.json
 #   item.json: {"title","happened","wanted","reproduce","cost","preliminary","files"}, files 만 비워도 된다
 #   FRICTION_ALLOW="owner/a owner/b" 가 있으면 그 밖의 repo 는 거부한다 (kakao-agent 봇은 자기 repo 하나로 묶는다)
+#   github.com 이 아닌 repo(사내 OSS 등)는 GitHub 이슈 대신 Jira 모음 티켓에 코멘트로 남긴다.
+#   티켓 키는 FRICTION_JIRA_ISSUE 또는 ~/.config/friction/jira-issue 에서 읽는다. 공개 repo 라 키를 여기 적지 않는다
 set -euo pipefail
 
 dir="${1:?usage: friction.sh <repo path> < item.json}"
 item="$(cat)"
 url="$(git -C "$dir" remote get-url origin)"
-repo="$(sed -E 's#^(https://github\.com/|git@github\.com:)##; s#\.git$##' <<< "$url")"
+case "$url" in
+  https://github.com/*|git@github.com:*) target=github ;;
+  *) target=jira ;;
+esac
+repo="$(sed -E 's#^(https?://[^/]+/|git@[^:]+:)##; s#\.git$##' <<< "$url")"
 
 if [ -n "${FRICTION_ALLOW:-}" ]; then
   case " ${FRICTION_ALLOW//,/ } " in
@@ -35,6 +41,22 @@ body="$(jq -r '
 if grep -Eiq '/Users/|/home/|[[:alnum:]._%+-]+@[[:alnum:].-]+\.[a-z]{2,}|(api[_-]?key|secret|password|token)[[:space:]]*[:=]|ghp_|gho_|github_pat_|sk-[[:alnum:]]{10,}|xox[bp]-' <<< "$title"$'\n'"$body"; then
   echo "refused: 본문에 홈 경로, 메일, 비밀 값 꼴이 있다" >&2
   exit 2
+fi
+
+if [ "$target" = jira ]; then
+  key="${FRICTION_JIRA_ISSUE:-$(cat "$HOME/.config/friction/jira-issue" 2>/dev/null || true)}"
+  [ -n "$key" ] || { echo "refused: $repo 는 Jira 모음 티켓으로 남기는데 FRICTION_JIRA_ISSUE 가 없다" >&2; exit 2; }
+  cli="${FRICTION_JIRA_CLI:-$HOME/.claude/skills/naver-jira/scripts/jira_api.py}"
+  head="[$repo] ${title#Friction: }"
+  body="${body//### /h5. }"
+  # ponytail: 최근 코멘트 200개의 앞머리만 본다. 모음 티켓이 그보다 커지면 월 단위로 새 티켓을 연다
+  if python3 "$cli" comments "$key" --max 200 | grep -qF "h4. $head"; then
+    python3 "$cli" comment "$key" "h4. (재발) $head"$'\n\n'"$body" >/dev/null
+  else
+    python3 "$cli" comment "$key" "h4. $head"$'\n\n'"$body" >/dev/null
+  fi
+  echo "commented: jira $key"
+  exit 0
 fi
 
 gh label create friction -R "$repo" --force --color d93f0b --description "작업 중 겪은 repo 쪽 불편" >/dev/null

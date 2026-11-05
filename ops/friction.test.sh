@@ -54,4 +54,27 @@ out="$(item | FRICTION_ALLOW="o/other" run)" && fail "FRICTION_ALLOW 밖 repo �
 out="$(item | FRICTION_ALLOW="o/other o/r" run)"
 grep -q "^commented:" <<< "$out"                                  || fail "FRICTION_ALLOW 안 repo 를 막았다: $out"
 
-echo "ok  friction.sh 생성, 댓글, 건너뛰기, 거부"
+cat > "$TMP/jira.py" <<'EOF'
+import os, sys
+with open(os.environ["JIRA_LOG"], "a") as f: f.write(repr(sys.argv[1:]) + "\n")
+if sys.argv[1] == "comments": print(open(os.environ["JIRA_LIST"]).read())
+EOF
+export JIRA_LOG="$TMP/jira.log" JIRA_LIST="$TMP/jira-list.txt" FRICTION_JIRA_CLI="$TMP/jira.py"
+git -C "$TMP/repo" remote set-url origin https://oss.example.com/team/r.git
+runj() { : > "$GH_LOG"; : > "$JIRA_LOG"; bash "$SCRIPT_DIR/friction.sh" "$TMP/repo" 2>&1; }
+
+echo "Comments on K-1: 0" > "$JIRA_LIST"
+out="$(item | FRICTION_JIRA_ISSUE=K-1 runj)"
+grep -q "^commented: jira K-1" <<< "$out"                         || fail "사내 repo 를 Jira 로 보내지 않았다: $out"
+grep -q "'comment', 'K-1', 'h4. \[team/r\] yt-dlp 봇 확인" "$JIRA_LOG" || fail "코멘트 머리에 [repo] 제목이 없다"
+grep -q "h5. 무슨 일" "$JIRA_LOG"                                  || fail "본문 제목을 Jira 꼴로 바꾸지 않았다"
+[ -s "$GH_LOG" ]                                                  && fail "사내 repo 인데 gh 를 불렀다"
+
+echo "  [1]  2026-11-05  @me  h4. [team/r] yt-dlp 봇 확인 h5. 무슨 일" > "$JIRA_LIST"
+out="$(item | FRICTION_JIRA_ISSUE=K-1 runj)"
+grep -q "h4. (재발) \[team/r\]" "$JIRA_LOG"                        || fail "같은 제목인데 재발로 붙이지 않았다"
+
+out="$(item | HOME="$TMP" FRICTION_JIRA_ISSUE= runj)" && fail "티켓 키 없이 통과시켰다"
+grep -q "^refused:" <<< "$out"                                    || fail "키가 없을 때 거부 이유를 말하지 않았다: $out"
+
+echo "ok  friction.sh 생성, 댓글, 건너뛰기, 거부, Jira 모음 티켓"
