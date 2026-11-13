@@ -9,6 +9,15 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 # Log
 
+## 2026-11-14
+
+- **repo 가 맡은 일은 `ops/repos.md` 의 `description` 한 곳에 둔다.** Matt Pocock 의 Home Repo 패턴
+  (https://www.aihero.dev/the-home-repo-pattern)과 대조해 보니 허브는 이미 그 패턴이고, 틈은 셋이었다.
+  repo 설명이 AGENTS.md, README, manifest 에 흩어져 README 표에선 `app-analysis` 가 빠져 있었다(#125 가 채웠다). AGENTS.md 목록(#125)은 description 을 가리키는 한 줄로 바꿨다.
+  하위 repo 를 worktree 로 편집하는 규칙은 이 Mac 기억에만 있어 봇과 다른 Mac 이 몰랐다. 그래서 AGENTS.md 로 올렸다.
+  사용자 폴더의 `file-friction` 은 사본이라 11-05 Jira 경로가 허브에 안 들어왔다. 허브에 반영하고 사용자 폴더는
+  허브를 가리키는 symlink 로 바꾼다. [operator-workspace-repo](concepts/operator-workspace-repo.md)
+
 ## 2026-10-24
 
 - **허브를 manifest, 공용 스킬, friction 도구, 지식 번들만 남기고 정리한다.**

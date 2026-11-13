@@ -1,8 +1,8 @@
 ---
 name: file-friction
 description: >
-  bbl-ai-lab 허브와 그 아래 repo(projects/*, ops/*)에서 일하다 repo 쪽 문제 때문에 우회했을 때, 그 불편을 그 repo 의
-  friction 이슈로 남긴다. 낡은 문서나 규칙, 깨지거나 느린 스크립트, 빠진 도구를 돌아갔을 때, 함정을 기억에 새로
+  어느 git repo(github.com, oss.navercorp.com)에서든 일하다 repo 쪽 문제 때문에 우회했을 때, 그 불편을 남긴다.
+  GitHub repo 는 그 repo 의 friction 이슈로, 사내 팀 repo 는 Jira 모음 티켓의 코멘트로 남긴다. 낡은 문서나 규칙, 깨지거나 느린 스크립트, 빠진 도구를 돌아갔을 때, 함정을 기억에 새로
   적을 때, 그리고 작업을 마무리하기 직전(wrap_up 앞)에 쓴다. kakao-agent 봇 턴에서도 쓴다.
 ---
 
@@ -11,6 +11,7 @@ description: >
 Kent C. Dodds 의 [file-friction](https://github.com/kentcdodds/kody/blob/main/.agents/skills/file-friction/SKILL.md)
 과 [friction log 기준](https://github.com/kentcdodds/kody/blob/main/docs/contributing/friction-log.md) 을 옮겼다.
 목적은 다음 에이전트가 같은 데서 막히지 않게, 우회한 불편을 고칠 일로 바꾸는 것이다. 고칠지는 사람이 정한다.
+bbl-ai-lab repo 의 이슈는 daily triage 가 모아 `STATE.md` 에 올린다.
 
 ## 남길 것과 건너뛸 것
 
@@ -24,10 +25,21 @@ Kent C. Dodds 의 [file-friction](https://github.com/kentcdodds/kody/blob/main/.
 
 ## 남기는 법
 
-1. 열린 friction 이슈를 먼저 찾는다: `gh issue list -R <owner/repo> --label friction`. 같은 불편이면 제목을 그대로 써서
-   2 를 돌리면 댓글로 붙는다
+남는 곳은 repo 주소로 갈린다. 스크립트가 알아서 가른다.
+
+| repo | 남는 곳 |
+|---|---|
+| `github.com/*` (내 repo, kakao-agent) | 그 repo 의 `friction` 라벨 GitHub 이슈. 같은 제목이면 댓글 |
+| 그 밖(`oss.navercorp.com` 팀 repo 등) | Jira 모음 티켓에 코멘트 1개. 머리 `h4. [owner/repo] 제목`, 같은 머리가 있으면 `(재발)` 로 붙는다 |
+
+1. 같은 불편이 이미 있는지 본다. GitHub 은 `gh issue list -R <owner/repo> --label friction`, Jira 는 모음 티켓
+   코멘트(`jira_api.py comments <키> --max 200`). 같은 불편이면 제목을 그대로 써서 2 를 돌린다
 2. 허브의 `ops/friction.sh` 로만 남긴다. Mac 세션은 `~/Documents/mygit/bbl-ai-lab/ops/friction.sh`, kakao-agent 봇은
-   `~/bbl-ai-lab/ops/friction.sh` 다. `gh issue create` 를 직접 쓰지 않는다. 라벨이 빠지면 triage 가 못 본다
+   `~/bbl-ai-lab/ops/friction.sh` 다. `gh issue create` 나 Jira 코멘트를 직접 쓰지 않는다. 라벨이나 머리가 빠지면 못 모은다
+   - Jira 모음 티켓 키는 `~/.config/friction/jira-issue` 한 줄(또는 `FRICTION_JIRA_ISSUE`)에서 읽는다. 허브가 공개
+     repo 라 키를 스킬이나 스크립트에 적지 않는다. 없으면 `refused:` 로 끝난다
+3. 내 repo(`github.com/BoBeenLee/*`)가 아닌 GitHub repo 는 대상 repo 와 제목, 본문을 먼저 보여주고 확인받은 뒤 남긴다.
+   이슈가 꺼진 repo 면 남기지 않고 답에 한 줄로 적는다. Jira 모음 티켓은 내 티켓이라 확인 없이 남기고 답에 한 줄로 알린다
 
 ```bash
 ops/friction.sh <repo 경로> <<'EOF'
@@ -43,7 +55,7 @@ EOF
 
 출력은 셋 중 하나다.
 - `created: <주소>`: 새 이슈를 만들었다
-- `commented: <주소>`: 같은 제목의 열린 이슈에 댓글로 붙였다
+- `commented: <주소>`: 같은 제목의 열린 이슈에 댓글로 붙였다. `commented: jira <키>` 는 Jira 모음 티켓에 남겼다는 뜻이다
 - `skipped: <이유>`: 항목이 비어 남기지 않았다. 이 경우 남기지 말라는 뜻이고, 다시 채워서 억지로 남기지 않는다
 
 `refused:` 로 끝나면 남기지 않은 것이다. 이유를 보고 본문을 고친다.

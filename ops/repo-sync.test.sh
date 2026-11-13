@@ -16,6 +16,7 @@ repositories:
     url: https://example.com/registered.git
     path: projects/registered
     branch: main
+    description: "already described"
 ---
 
 # prose must survive
@@ -34,6 +35,8 @@ out1="$(bash "$TMP/ops/repo-sync.sh" --list 2>&1)"
 grep -q "adopt projects/adoptme" <<< "$out1"                          || fail "origin 있는 미등록 repo를 등록하지 않았다"
 grep -q "warn  projects/noremote" <<< "$out1"                         || fail "origin 없는 repo를 경고하지 않았다"
 grep -qE "^adoptme\s+https://example.com/adoptme.git\s+projects/adoptme" <<< "$out1" || fail "등록된 항목이 레코드로 안 나온다"
+grep -q "warn  adoptme: description" <<< "$out1"                      || fail "description 없는 항목을 경고하지 않았다"
+grep -q "warn  registered: description" <<< "$out1"                   && fail "description 있는 항목을 경고했다"
 grep -q "noremote" "$TMP/ops/repos.md"                                && fail "origin 없는 repo가 manifest에 들어갔다"
 grep -q "# prose must survive" "$TMP/ops/repos.md"                    || fail "frontmatter 아래 산문이 사라졌다"
 

@@ -4,7 +4,7 @@ title: Operator workspace repo
 description: A separate operational tooling repository installed by manifest-driven clone rather than tracked as a submodule.
 resource: ../../ops/repos.md
 tags: [operator-repo, manifest, hermes, openmontage]
-timestamp: 2026-08-31T00:00:00+09:00
+timestamp: 2026-11-14T00:00:00+09:00
 ---
 
 # Operator Workspace Repo
@@ -37,6 +37,12 @@ any clone missing from the manifest, reading the `name` from the directory and t
 tree with a `/projects/*/` glob. So adding one is `git remote add origin` plus one
 sync run, and neither file is edited by hand. A directory with no `origin` is
 warned about and skipped, because a manifest entry without a URL cannot be cloned.
+
+Every entry also carries a `description`: one line on what the repo owns. It is
+the only place that says so, and agents and bots pick a repo by reading it, so
+AGENTS.md and README point here instead of repeating it. The sync cannot know it,
+so a self-registered entry gets it by hand afterwards, and `repo-sync.sh` warns
+until it does. It stays out of `--list`, whose four tab fields the bots parse.
 
 The reason registration is bundled into the sync command rather than left as a
 documented step: the forgettable half is registration, not cloning, and it is
@@ -116,4 +122,4 @@ its keep.
 
 - Operator host scripts and runbooks belong in the owning operator repo.
 - Hub-level docs may link to an operator repo path, but implementation changes happen in the owning repo and never produce a hub commit.
-- Adding or moving an operator repo means editing `ops/repos.md` and `.gitignore` together. A project repo under `projects/` is instead registered by `repo-sync.sh`; hand-editing the manifest for one is drift waiting to happen.
+- Adding or moving an operator repo means editing `ops/repos.md` and `.gitignore` together. A project repo under `projects/` is instead registered by `repo-sync.sh`; writing its entry by hand is drift waiting to happen, and only its `description` is typed in.
