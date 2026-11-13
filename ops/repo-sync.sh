@@ -40,8 +40,14 @@ done
 # frontmatter(첫 --- ~ 두 번째 ---)만 잘라 name/url/path/branch 레코드로 편다.
 records="$(
   awk '/^---[[:space:]]*$/ { n++; next } n == 1' "$MANIFEST" | awk '
-    function flush() { if (name != "") printf "%s\t%s\t%s\t%s\n", name, url, path, branch }
-    /^[[:space:]]*-[[:space:]]*name:/ { flush(); name = $3; url = ""; path = ""; branch = "main"; next }
+    # description 은 레코드에 넣지 않는다(봇이 --list 의 4칸을 읽는다). 에이전트가 repo 를 고르는 근거라 빠지면 경고만 한다.
+    function flush() {
+      if (name == "") return
+      printf "%s\t%s\t%s\t%s\n", name, url, path, branch
+      if (!desc) printf "warn  %s: description 이 없다 (ops/repos.md 항목에 한 줄 적는다)\n", name > "/dev/stderr"
+    }
+    /^[[:space:]]*-[[:space:]]*name:/ { flush(); name = $3; url = ""; path = ""; branch = "main"; desc = 0; next }
+    /^[[:space:]]*description:/ { desc = 1; next }
     /^[[:space:]]*url:/    { url = $2;    next }
     /^[[:space:]]*path:/   { path = $2;   next }
     /^[[:space:]]*branch:/ { branch = $2; next }
