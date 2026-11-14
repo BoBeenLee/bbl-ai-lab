@@ -4,7 +4,7 @@ repositories:
     url: https://github.com/BoBeenLee/hermes-workspace.git
     path: hermes-workspace
     branch: main
-    description: "DGX Spark 호스트 운영(SSH, Tailscale, 원격 데스크톱, 로컬 LLM)과 DGX [jarvis] 카톡 봇. 운영 repo"
+    description: "원격 Hermes 호스트(기본 원격 Mac, DGX Spark) 운영. SSH, Tailscale, 원격 데스크톱, 로컬 LLM, Mac Hermes 브리지. DGX [jarvis] 카톡 봇은 2026-10-16 부터 꺼져 있다. 운영 repo"
   - name: remote-comfyui
     url: https://github.com/BoBeenLee/remote-comfyui.git
     path: ops/remote-comfyui
@@ -90,6 +90,10 @@ repositories:
     path: projects/stock-agent
     branch: main
     description: "TradingAgents 기반 주식 분석(국내 KOSPI, KOSDAQ 먼저). 주문은 나중에 kakao-agent 워커 도구로, 내 승인 뒤에만"
+  - name: hermes-dgx-off
+    url: https://github.com/BoBeenLee/hermes-workspace.git
+    path: projects/hermes-dgx-off
+    branch: main
 ---
 
 # 운영 repo 목록
