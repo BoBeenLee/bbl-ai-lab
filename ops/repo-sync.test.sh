@@ -28,6 +28,8 @@ for n in registered adoptme noremote; do
   git -C "$TMP/projects/$n" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init
 done
 git -C "$TMP/projects/adoptme" remote add origin https://example.com/adoptme.git
+# adoptme 의 worktree 는 .git 이 파일이다. 별도 repo 로 등록되면 안 된다.
+git -C "$TMP/projects/adoptme" worktree add -q "$TMP/projects/adoptme-wt" -b wt
 
 fail() { echo "FAIL: $1" >&2; exit 1; }
 
@@ -37,6 +39,7 @@ grep -q "warn  projects/noremote" <<< "$out1"                         || fail "o
 grep -qE "^adoptme\s+https://example.com/adoptme.git\s+projects/adoptme" <<< "$out1" || fail "등록된 항목이 레코드로 안 나온다"
 grep -q "warn  adoptme: description" <<< "$out1"                      || fail "description 없는 항목을 경고하지 않았다"
 grep -q "warn  registered: description" <<< "$out1"                   && fail "description 있는 항목을 경고했다"
+grep -q "adoptme-wt" "$TMP/ops/repos.md"                              && fail "worktree 를 별도 repo 로 등록했다"
 grep -q "noremote" "$TMP/ops/repos.md"                                && fail "origin 없는 repo가 manifest에 들어갔다"
 grep -q "# prose must survive" "$TMP/ops/repos.md"                    || fail "frontmatter 아래 산문이 사라졌다"
 
