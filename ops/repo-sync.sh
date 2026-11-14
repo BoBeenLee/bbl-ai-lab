@@ -10,7 +10,8 @@ MANIFEST="$ROOT/ops/repos.md"
 # projects/ 아래 클론 중 manifest에 없는 것을 origin URL을 읽어 자동 등록한다.
 # 손으로 manifest를 고치는 단계를 없앤다. 등록된 뒤에는 no-op이다.
 for dir in "$ROOT"/projects/*/; do
-  [ -e "$dir/.git" ] || continue
+  # .git 이 파일이면 다른 클론의 worktree 다(AGENTS.md 가 하위 repo worktree 를 projects/ 아래에 두라고 한다). 등록하지 않는다.
+  [ -d "$dir/.git" ] || continue
   name="$(basename "$dir")"
   grep -qE "^[[:space:]]*path:[[:space:]]*projects/$name[[:space:]]*$" "$MANIFEST" && continue
 

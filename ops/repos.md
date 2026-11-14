@@ -90,10 +90,6 @@ repositories:
     path: projects/stock-agent
     branch: main
     description: "TradingAgents 기반 주식 분석(국내 KOSPI, KOSDAQ 먼저). 주문은 나중에 kakao-agent 워커 도구로, 내 승인 뒤에만"
-  - name: hermes-dgx-off
-    url: https://github.com/BoBeenLee/hermes-workspace.git
-    path: projects/hermes-dgx-off
-    branch: main
 ---
 
 # 운영 repo 목록
