@@ -11,6 +11,9 @@ timestamp: 2026-06-27T00:00:00+09:00
 
 ## 2026-11-14
 
+- **숏폼 클론은 hypit 으로, DGX 생성은 remote-comfyui 의 hypit Provider 로 잇는다.** hypit 스킬을
+  `.agents/skills/hypit` 에 고정했다. 실행 파일은 npm 이라 manifest 에 올리지 않는다. Provider 는
+  remote-comfyui `integrations/hypit`(PR #106). [operator-workspace-repo](concepts/operator-workspace-repo.md)
 - **repo 가 맡은 일은 `ops/repos.md` 의 `description` 한 곳에 둔다.** Matt Pocock 의 Home Repo 패턴
   (https://www.aihero.dev/the-home-repo-pattern)과 대조해 보니 허브는 이미 그 패턴이고, 틈은 셋이었다.
   repo 설명이 AGENTS.md, README, manifest 에 흩어져 README 표에선 `app-analysis` 가 빠져 있었다(#125 가 채웠다). AGENTS.md 목록(#125)은 description 을 가리키는 한 줄로 바꿨다.

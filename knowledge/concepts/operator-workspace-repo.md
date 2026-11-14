@@ -72,6 +72,13 @@ former calls the latter as one provider inside its `assets` stage. Batch queuein
 stays with `remote-comfyui`, because OpenMontage's ComfyUI tool does not free
 memory between jobs.
 
+[hypit](https://github.com/hypit-ai/hypit) covers the other end: cloning a
+short-form video and producing variants. It is not a manifest entry. It runs
+from its npm executable and the `hypit` skill pinned in `skills-lock.json`, so
+there is no checkout to sync. Its DGX provider lives in `remote-comfyui` under
+`integrations/hypit`, which queues one job at a time and frees memory only on an
+empty queue, the same rule as batch queueing above.
+
 # Calling remote-comfyui from OpenMontage
 
 Verified end to end on 2026-08-31: install, wiring, a compose-only pass over

@@ -19,7 +19,7 @@
 
 | 위치 | 소유 | 용도 |
 |------|------|------|
-| `.agents/skills/` + [skills-lock.json](skills-lock.json) | 외부 installer | 설치된 agent skill (`baoyu-youtube-transcript`, `unlazy`). 손으로 고치지 않는다. `dgx-comfyui-ops` 는 `ops/remote-comfyui` 클론을 가리키는 symlink |
+| `.agents/skills/` + [skills-lock.json](skills-lock.json) | 외부 installer | 설치된 agent skill (`baoyu-youtube-transcript`, `unlazy`, `hypit`). 손으로 고치지 않는다. `dgx-comfyui-ops` 는 `ops/remote-comfyui` 클론을 가리키는 symlink |
 | `.claude/skills/` | 혼합 | `.agents/skills/` 로의 symlink 와, 이 repo 가 소유하는 `file-friction` |
 
 ## friction 기록
@@ -44,6 +44,8 @@ bash ops/repo-sync.sh --list   # manifest 검증 (name/url/path/branch 누락 �
 URL과 브랜치의 단일 진실원은 [ops/repos.md](ops/repos.md) frontmatter다. 운영 repo를 추가하면 이 파일과 `.gitignore`를 **함께** 고친다. `projects/` 아래는 손으로 고치지 않는다 — 아래 참조.
 
 `ops/openmontage/` 만 내 소유가 아닌 업스트림 도구다. `repo-sync.sh` 는 클론까지만 하므로, 그 repo 안에서 `make setup` 을 한 번 더 돌려야 쓸 수 있다.
+
+숏폼 클론과 변형 생산은 [hypit](https://github.com/hypit-ai/hypit) 이 맡는다. 클론하지 않고 `hypit` 스킬(위 `.agents/skills/`)과 npm 실행 파일로 쓰며, DGX 생성은 `ops/remote-comfyui` 의 `integrations/hypit` Provider 가 잇는다.
 
 DGX Spark 작업은 종류에 상관없이 `hermes-workspace/knowledge/runbooks/dgx-spark-remote-access.md`의 DGX Doc Map에서 시작한다.
 
